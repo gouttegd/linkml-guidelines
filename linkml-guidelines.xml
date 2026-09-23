@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<article xmlns="http://docbook.org/ns/docbook"
+  xmlns:xl="http://www.w3.org/1999/xlink"
+  xmlns:xi="http://www.w3.org/2001/XInclude"
+  version="5.0"
+  xml:lang="en">
+
+  <info>
+
+    <title>LinkML guidelines</title>
+    <subtitle>Authoring extensible and reusable schemas</subtitle>
+
+    <author>
+      <personname>
+        <firstname>Damien</firstname>
+        <surname>Goutte-Gattat</surname>
+      </personname>
+      <email>damien@gerbi-gmb.de</email>
+    </author>
+
+    <pubdate>2026/MM/DD</pubdate>
+
+    <copyright>
+      <year>2026</year>
+      <holder>Damien Goutte-Gattat</holder>
+    </copyright>
+ 
+  </info>
+
+  <section xml:id="sect.intro">
+    <title>Introduction</title>
+
+    <section xml:id="sect.purpose">
+      <title>Rationale and purpose of this document</title>
+
+      <para><link xl:href="https://linkml.io/">LinkML schemas</link> are
+      increasingly used to formally describe data models throughout the life
+      sciences (and beyond). This fast adoption creates a need for some
+      guidance to be provided to authors of LinkML schemas, for the following
+      reasons:</para>
+
+      <itemizedlist>
+
+        <listitem>
+
+          <para>Unfortunately, LinkML’s own documentation is often lacking.
+          Several features are poorly documented, if at all. Among other
+          effects, this can lead some schema authors to devise sometimes
+          needlessly complicated solutions to achieve something that could be
+          done much more easily using available LinkML features, simply
+          because they are unaware of said features or don’t realise what they
+          can be used for.</para>
+
+        </listitem>
+
+        <listitem>
+
+          <para>Also unfortunately, several aspects of LinkML are critically
+          <emphasis>underspecified</emphasis>. This means that some features
+          cannot be relied upon, because there are little to no guarantees
+          that they would be supported in the same way across different
+          implementations of LinkML. Importantly, sometimes “different
+          implementations of LinkML” may mean “different
+          <emphasis>parts</emphasis> of the same implementation, so even if
+          you are only using (or planning to use) LinkML-Py (in principle the
+          <foreignphrase>de facto</foreignphrase> reference implementation),
+          some underspecified features may still be supported differently
+          depending on which parts (for example, which generator) of LinkML-Py
+          you are using.  Underspecified features are also a risk in the
+          long-term, because they may work one way in a given version of
+          LinkML, and another way in a future version.</para>
+
+        </listitem>
+
+        <listitem>
+
+          <para>There is very little available guidance on how to create
+          schemas that are <emphasis>extensible</emphasis> and
+          <emphasis>reusable</emphasis>.</para>
+
+        </listitem>
+
+      </itemizedlist>
+
+    </section>
+
+    <section xml:id="sect.legal">
+      <title>Legal notice</title>
+
+      <para>This document is copyright 2026 by Damien Goutte-Gattat.</para>
+
+      <para>This work is licensed under a <link
+      xl:href="http://creativecommons.org/license/by-sa/4.0/">Creative
+      Commons</link> Attribution–Share Alike 4.0 International License.</para>
+
+      <para>This work is supported by the National Science Foundation under
+      Grant <link
+      xl:href="https://www.nsf.gov/awardsearch/show-award/?AWD_ID=2513921">No. 2513921</link>.
+      Any opinions, findings, and conclusions or recommendations expressed in
+      this material are those of the author(s) and do not necessarily reflect
+      the views of the National Science Foundation.</para>
+
+    </section>
+
+  </section>
+
+  <section xml:id="sect.reusability">
+    <title>About schema reusability</title>
+
+    <para>One particular aims of those guidelines is to promote
+    <emphasis>reusability</emphasis> and <emphasis>extensibility</emphasis> of
+    LinkML schemas. As a preliminary step, we need to clearly distinguish
+    between “reusing a model” and “reusing a schema”.</para>
+        
+    <note>
+
+      <para>Throughout this document, a clear distinction is always made
+      between a <emphasis>model</emphasis> and a <emphasis>schema</emphasis>.
+      Simply put, a schema is a <emphasis>formal description</emphasis> of a
+      model, using a <emphasis>schema definition language</emphasis> (SDL)
+      such as LinkML, XML Schemas, JSON Schema, etc. Among other things, this
+      distinction notably means that, while a schema always corresponds to
+      (formally describes) a single model, the same model can have several
+      formal descriptions as schemas.</para>
+
+    </note>
+
+    <para>To illustrate the difference between “reusing a model” and “reusing
+    a schema”, let us consider the case of a model for the concept of
+    “person”. Such a model could define a person as an entity that has a first
+    name, a surname, a date of birth, and an email address.<footnote>
+
+      <para>This would be a very questionable model, if only because the
+      assumption that any person has a first name and a surname is a rather
+      bold one and does not hold in all corners of the world.  But it will do
+      for our purpose here.</para>
+
+    </footnote> A LinkML schema for that model could look like this (schema
+    preamble omitted for brevity):</para>
+
+    <example xml:id="example.reusability.person">
+      <title>The “person” schema</title>
+      <programlisting>
+classes:
+  Person:
+    attributes:
+      first_name:
+        range: string
+      surname:
+        range: string
+      birthdate:
+        range: date
+      email:
+        range: string
+      </programlisting>
+    </example>
+
+    <para>Now let us imagine another model that, among other things, also
+    needs to represent “persons”. For example, suppose you want to describe
+    scientific experiments, and you need to capture the person(s) who
+    performed an experiment.</para>
+
+    <para>Reusing the “person“ <emphasis>model</emphasis> for this purpose
+    means that you would write your “experiment” schema so that it formally
+    defines the same concept of person, possibly with some specific new
+    attributes. This could look like this:</para>
+
+    <example xml:id="example.reusability.experiment-reusing-model">
+      <title>The “experiment” schema reusing the person model</title>
+      <programlisting>
+classes:
+  Experiment:
+    attributes:
+      experimenter:
+        range: Experimenter
+        multivalued: true
+      # Other attributes defining an experiment...
+
+  Experimenter:
+    attributes:
+      first_name:
+        range: string
+      surname:
+        range: string
+      birthdate:
+        range: date
+      email:
+        range: string
+      </programlisting>
+    </example>
+
+    <para>In that schema, the <classname>Experimenter</classname> class
+    describes the same kind of object as the <classname>Person</classname>
+    class of the previous schema. A JSON dictionary representing a valid
+    <classname>Person</classname> would also represent a valid
+    <classname>Experimenter</classname>. However, you will have noticed that
+    there is no link of any kind between the two schemas: the second schema is
+    reusing the <emphasis>model</emphasis> described by the first schema, but
+    it is not reusing the schema itself.</para>
+
+    <para>Reusing the schema itself, on the other hand, means that you would
+    <emphasis>import</emphasis> the first schema, and could look like
+    this:</para>
+
+    <example xml:id="example.reusability.experiment-reusing-schema">
+      <title>The “experiment” schema reusing the person schema</title>
+      <programlisting>
+imports:
+  - person <co id="callout.reusability.import" />
+
+classes:
+  Experiment:
+    attributes:
+      experimenter:
+        range: Person <co id="callout.reusability.ref-to-imported-class" />
+        multivalued: true
+      # Other attributes defining an experiment...
+      </programlisting>
+
+      <calloutlist>
+        <callout arearefs="callout.reusability.import">
+          <para>This supposes the first schema is available in a file named
+          <filename>person.yaml</filename> in the same directory as the
+          directory containing this schema.</para>
+        </callout>
+        <callout arearefs="callout.reusability.ref-to-imported-class">
+          <para>This is a reference to the <classname>Person</classname> class
+          from the imported schema.</para>
+        </callout>
+      </calloutlist>
+    </example>
+
+    <para>The schemas in <xref
+    linkend="example.reusability.experiment-reusing-model" xrefstyle="select:
+    label"/> and in <xref
+    linkend="example.reusability.experiment-reusing-schema" xrefstyle="select:
+    label"/> are in effect describing the same model. A bit of instance data
+    valid against the former is also valid against the latter. The difference
+    is that the latter is avoiding duplicating the code from the schema in
+    <xref linkend="example.reusability.person" xrefstyle="select:
+    label"/>.</para>
+
+    <para>Reusing a <emphasis>model</emphasis> is reasonably easy – it can be
+    done by basically copying the contents of the schema describing the model
+    to reuse, and pasting it into the schema describing the reusing
+    model.</para>
+
+    <para>Reusing a <emphasis>schema</emphasis> is more difficult. Or, more
+    precisely, designing a schema in such a way that it can be easily reused
+    in another schema is more difficult.<footnote><para>Though of course this
+    is not apparent with our “Person” example, given its
+    simplicity.</para></footnote> One big aim of this document is to help
+    schema authors to do precisely that.</para>
+
+  </section>
+
+</article>
