@@ -84,6 +84,31 @@
 
     </section>
 
+    <section xml:id="sect.prerequisites">
+      <title>Prerequisites</title>
+
+      <para>This document is <emphasis>not</emphasis> intended as a substitute
+      for LinkML’s own documentation. The reader is assumed to have some basic
+      familiarity with LinkML.</para>
+
+      <para>This document also assumes that the author of a LinkML schema (i)
+      is also the designer of the model that the schema is supposed to
+      formally represent, and (ii) as such, is free to design the model as
+      required to follow the proposed guidelines.</para>
+
+      <note>
+
+        <para>This may not always be the case. For example, one may have to
+        author a schema to represent a pre-existing model that one may not be
+        allowed to change – maybe because the model is already in active use,
+        and any change to the model may break existing code or data. In such a
+        scenario where a schema is “retrofitted” to an existing model, several
+        of the guidelines in this document may be impossible to apply.</para>
+
+      </note>
+
+    </section>
+
     <section xml:id="sect.legal">
       <title>Legal notice</title>
 
@@ -251,6 +276,103 @@ classes:
     is not apparent with our “Person” example, given its
     simplicity.</para></footnote> One big aim of this document is to help
     schema authors to do precisely that.</para>
+
+  </section>
+
+  <section xml:id="sect.naming">
+    <title>Considerations about naming</title>
+
+    <section xml:id="sect.naming.purpose">
+      <title>What’s in a name?</title>
+
+      <para>All elements within a LinkML schemas (in particular, all
+      <emphasis>definitions</emphasis>, i.e. class definitions, slot
+      definitions, enum definition, etc.) have a <emphasis>name</emphasis>.
+      The name of an element has several purposes, but its primary purpose is
+      to allow referencing the element from elsewhere in the schema – that is,
+      it acts as the <emphasis>identifier</emphasis> for the element.</para>
+
+      <note>
+
+        <para>Schema elements also have a <emphasis>URI</emphasis>, which is
+        either explicitly assigned by the schema author (using metaslots such
+        as <property>class_uri</property> or <property>slot_uri</property>) or
+        automatically derived from the schema’s default prefix and the
+        element’s name.</para>
+
+        <para>However, while the URI of an element <emphasis>may</emphasis>
+        identify the element in some contexts (typically in RDF context), as a
+        general rule it is <emphasis>not</emphasis> an identifier. Elements in
+        a LinkML schemas are strictly identified by their name, not by their
+        URI.</para>
+
+      </note>
+
+      <para>The name of an element may also fulfil at least two other
+      purposes:</para>
+
+      <itemizedlist>
+
+        <listitem>
+
+          <para>It may directly dictate how the element is supposed to appear
+          in instance data in some serialisations. This is the case, in
+          particular, for slots/attributes and for permissible values.</para>
+
+        </listitem>
+
+        <listitem>
+
+          <para>It serves as the basis from which the <emphasis>code
+          symbol</emphasis> representing the element in a programming language
+          is derived, when generating code for that programming language from
+          the schema.</para>
+
+        </listitem>
+
+      </itemizedlist>
+
+    </section>
+
+    <section xml:id="sect.naming.no-namespace">
+      <title>Lack of namespacing</title>
+
+      <para>An important aspect of LinkML, which is in fact critical when
+      talking about schema reusability, is that all element names reside in a
+      <emphasis>single, flat namespace</emphasis>.</para>
+
+      <para>That namespace encompasses the entire imports closure, which means
+      that when a schema <replaceable>Foo</replaceable> imports another schema
+      <replaceable>Bar</replaceable>, all the elements defined within
+      <replaceable>Bar</replaceable> become available in
+      <replaceable>Foo</replaceable> under their original name. Simply put,
+      this means that if the two schemas happen to each define an element with
+      the same name, a name conflict will occur.</para>
+
+      <note>
+
+        <para>What happens <emphasis>exactly</emphasis> in this situation
+        – how the name conflict is handled – is currently unclear, as
+        different parts of the “reference implementation” of LinkML have
+        different behaviours. The most commonly observed behaviour – and
+        presumably the one that is intended to become standardized – is that
+        the element defined in the <emphasis>importing</emphasis> schema will
+        take precedence over the element defined in the
+        <emphasis>imported</emphasis> schema (that is, the element from the
+        imported schema will be completely “masked” by the element from the
+        importing schema).</para>
+
+      </note>
+
+      <para>As a consequence, schema authors should think <emphasis>very
+      carefully</emphasis> about how they name the elements of their schema,
+      if they intend for the schema to be reusable.  In particular, they
+      should refrain, as much as possible, from “cluttering” the global
+      namespace with element names that are too “generic”, because such names
+      increase the likelihood of a naming conflict when the schema is reused
+      (imported) elsewhere.</para>
+
+    </section>
 
   </section>
 
