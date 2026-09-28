@@ -45,6 +45,13 @@
     </xsl:attribute>
   </xsl:attribute-set>
 
+  <xsl:attribute-set name="monospace.verbatim.properties">
+    <xsl:attribute name="font-size">
+      <xsl:value-of select="$body.font.master * 0.8" />
+      <xsl:text>pt</xsl:text>
+    </xsl:attribute>
+  </xsl:attribute-set>
+
   <xsl:param name="section.autolabel">1</xsl:param>
 
   <xsl:param name="ulink.show">0</xsl:param>
