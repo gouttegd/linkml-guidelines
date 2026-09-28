@@ -353,7 +353,7 @@ classes:
 
         <para>What happens <emphasis>exactly</emphasis> in this situation
         – how the name conflict is handled – is currently unclear, as
-        different parts of the “reference implementation” of LinkML have
+        different parts of the reference implementation of LinkML have
         different behaviours. The most commonly observed behaviour – and
         presumably the one that is intended to become standardized – is that
         the element defined in the <emphasis>importing</emphasis> schema will
@@ -371,6 +371,136 @@ classes:
       namespace with element names that are too “generic”, because such names
       increase the likelihood of a naming conflict when the schema is reused
       (imported) elsewhere.</para>
+
+    </section>
+
+    <section xml:id="sect.naming.data">
+      <title>LinkML names in data</title>
+
+      <para>Some LinkML names within a LinkML schema have a direct influence
+      on the way the data is serialised, and this must be taken into account
+      when deciding how to name a given schema element.</para>
+
+      <para>To understand this, let us consider the following schema:</para>
+
+      <example xml:id="example.naming.data.org-schema">
+        <title>A schema for “organisations”</title>
+        <programlisting>
+classes:
+  Organisation:
+    description: An organisation of some sort.
+    tree_root: true
+    attributes:
+      name:
+        description: The name of the organisation
+        range: string
+      foundation:
+        description: The date the organisation was founded.
+        range: date
+      founder:
+        description: The person who founded the organisation.
+        range: Person
+      type:
+        description: The type of organisation.
+        range: OrganisationType
+
+  Person:
+    description: A human person.
+    attributes:
+      first_name: The person’s first name.
+        description
+        range: string
+      surname:
+        description: The person’s surname (or last name, or family name).
+        range: string
+      email:
+        description: The person’s email address.
+        range: string
+
+enums:
+  OrganisationType:
+    description: Possible types for an organisation.
+    permissible_values:
+      commercial:
+        description: An organisation that is a commercial entity.
+      non_profit:
+        description: A non-profit organisation.
+        </programlisting>
+      </example>
+
+      <para>Now let us look at a possible piece of instance data that matches
+      this schema:</para>
+
+      <example xml:id="example.naming.data.org-instance">
+        <title>A JSON file representing an organisation</title>
+        <programlisting>
+{
+    "name": "Acme Corporation",
+    "foundation": "1935-06-22",
+    "founder":
+    {
+        "first_name": "Marvin",
+        "last_name": "Acme",
+        "email": "marvin@acme.example.com"
+    },
+    "type": "commercial"
+}
+        </programlisting>
+      </example>
+
+      <para>The important thing to notice in that example is that class names
+      <emphasis>do not appear in the instance data</emphasis>. The fact that
+      the top-level object is an <classname>Organisation</classname> is
+      <emphasis>not</emphasis> explicitly apparent, and neither is the fact
+      that the value of the <literal>founder</literal> key is a
+      <classname>Person</classname>. If those classes had been given other
+      names in the LinkML schema (maybe
+      <classname>OrganisationalEntity</classname> and
+      <classname>PersonalEntity</classname>, for example), this would not have
+      changed anything to the way the data is serialised. The file in <xref
+      linkend="example.naming.data.org-instance" xrefstyle="select: label"/>
+      would still have represented valid data.</para>
+
+      <para>Likewise for enumeration names. The fact that the value of the
+      <literal>type</literal> key is a <classname>OrganisationType</classname>
+      is not apparent. The enumeration could have been named differently,
+      without impacting the serialisation and therefore without invalidating
+      our example file.</para>
+
+      <para>Attribute (or <emphasis>slot</emphasis>) names, on the other hand,
+      do appear in the instance data. The dictionary key names are taken
+      verbatim from the attribute names in the LinkML schema. Should any of
+      the attribute have been named differently, our data file would no longer
+      be valid against the schema.</para>
+
+      <para>Likewise for the names of enumerations’ permissible values: the
+      value in the <literal>type</literal> key <emphasis>must</emphasis> match
+      the name of one of the permissible values of the
+      <classname>OrganisationType</classname> enumeration. Should those values
+      have been named, say, <literal>CommercialEntity</literal> and
+      <literal>NonProfitEntity</literal>, again, our data file would be
+      invalid.</para>
+
+      <para>What this all means is that: (i) not all LinkML names are equals,
+      and (ii) for some elements, the choice of the name matters beyond the
+      LinkML schema. As a general rule, when naming classes and enumerations,
+      schema authors have more freedom than when they are naming
+      attributes/slots and permissible values, because the former have no
+      bearing on the serialised data.<footnote><para>There is one case where
+      the name of a class can appear in serialised data: when <emphasis>type
+      designators</emphasis> are used. That case will be covered elsewhere in
+      this document.</para></footnote></para>
+
+      <note>
+
+        <para>In particular, in the case where a schema is authored
+        <foreignphrase>a posteriori</foreignphrase> to fit pre-existing JSON
+        data, the authors of such a retrofitted schema have <emphasis>no
+        freedom at all</emphasis> when it comes to naming the attributes/slots
+        or permissible values: they <emphasis>must</emphasis> use the names as
+        they appear in the existing data.</para>
+
+      </note>
 
     </section>
 
