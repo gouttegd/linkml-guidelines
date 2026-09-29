@@ -702,6 +702,144 @@ classes:
 
     </section>
 
+    <section xml:id="sect.antipatterns.variableslots">
+      <title>Enum-controlled attributes variability</title>
+
+      <para>“Enum-controlled attributes variability” is a terribly bad name,
+      but the (anti-)pattern it attempts to describe is a very common one.
+      This is what happens when you try to use a single class to represent a
+      variety of objects of slightly different types, described by slightly
+      different attributes. And then a single special attribute within the
+      class is used to distinguish between the different types the class is
+      intended to represent.</para>
+
+      <para>A simplistic typical example in LinkML could look like
+      this:</para>
+
+      <example xml:id="example.antipatterns.variableslots.wrong">
+        <title>Representing vehicles with a single class with variable attributes</title>
+        <programlisting>
+enums:
+  VehicleType:
+    description: The type of a vehicle.
+    permissible_values:
+      bicycle:
+      motorbike:
+      car:
+
+classes:
+  Vehicle:
+    attributes:
+      type:
+        description: The type of the vehicle.
+        range: VehicleType
+      mass:
+        description: The mass of the vehicle (when empty), expressed in kg.
+        range: integer
+      power:
+        description:
+          The power of the engine, expressed in horsepower (hp).
+          This attribute should only be filled when type is set to
+          either motorbike or car.
+        range: integer
+      windshield_surface:
+        description:
+          The surface of the windshield, expressed in cm². This
+          attribute should only be filled when type is set to car.
+        range: integer
+        </programlisting>
+      </example>
+
+      <para>A slightly more refined version would use <link
+      xl:ref="https://linkml.io/linkml/schemas/advanced.html#rules">LinkML
+      rules</link> to enforce the constraints that some of the attributes of
+      the <classname>Vehicle</classname> class can only be used when the
+      <property>type</property> attribute is set to a particular
+      <classname>VehicleType</classname> value. However, while such rules would allow the schema to work as
+      expected, they could quickly become very cumbersome to maintain.</para>
+
+      <para>LinkML provides a much better and easier way of achieving the
+      desired result, which is why <xref
+      linkend="example.antipatterns.variableslots.wrong" xrefstyle="select:
+      label" /> has to be considered an anti-pattern. The recommended way in
+      LinkML to implement that example is to use a hierarchy of classes whose
+      base class carries a <link
+      xl:href="https://linkml.io/linkml/schemas/type-designators.html">type
+      designator attribute</link>, as in the following example:</para>
+
+      <example xml:id="example.antipatterns.variableslots.correct">
+        <title>Representing vehicles with a hierarchy of type-designated classes</title>
+        <programlisting>
+classes:
+  Vehicle:
+    description: The base class for all types of vehicle.
+    attributes:
+      type:
+        description: The type of vehicle.
+        range: string
+        designates_type: true <co xml:id="example.antipatterns.variableslots.correct.td" />
+      mass:
+        description: The mass of the vehicle (when empty), expressed in kg.
+        range: integer
+
+  Bicycle:
+    is_a: Vehicle
+
+  MotorizedVehicle: <co xml:id="example.antipatterns.variableslots.correct.motorized" />
+    is_a: Vehicle
+    attributes:
+      power:
+        description: The power of the engine, expressed in horsepower (hp).
+        range: integer
+
+  Motorbike:
+    is_a: MotorizedVehicle
+
+  Car:
+    is_a: MotorizedVehicle
+    attributes:
+      windshield_surface:
+        description: The surface of the windshield, expressed in cm².
+        </programlisting>
+        <calloutlist>
+          <callout arearefs="example.antipatterns.variableslots.correct.td">
+            <para>This makes <property>type</property> the <emphasis>type
+            designator</emphasis> for the <classname>Vehicle</classname> class
+            – the attribute whose value indicates the type of the object it
+            belongs to.</para>
+          </callout>
+          <callout arearefs="example.antipatterns.variableslots.correct.motorized">
+            <para>This class is not strictly speaking needed, but it allows to
+            avoid repeating the <property>power</property> attribute (or any
+            other attribute that would be shared by all motorized vehicles) in
+            both the <classname>Motorbike</classname> and
+            <classname>Car</classname> classes.</para>
+          </callout>
+        </calloutlist>
+      </example>
+
+      <para>There is no longer any need for a
+      <classname>VehicleType</classname> enumeration. By making the
+      <property>type</property> attribute the type designator for the
+      <classname>Vehicle</classname> class, we are implicitly restricting the
+      set of allowed values for that attribute to the list of names that
+      represent the known descendants of the <classname>Vehicle</classname>
+      class (including the <classname>Vehicle</classname> itself). That is,
+      LinkML-aware tools will automatically enforce that the value of
+      <property>type</property> is one of <literal>Vehicle</literal>,
+      <literal>Bicycle</literal>, <literal>MotorizedVehicle</literal>,
+      <literal>Motorbike</literal>, or <literal>Car</literal>.</para>
+
+      <para>Furthermore, there is no need for any explicit rules restricting
+      the use of some attributes depending on the value of the
+      <property>type</property> attribute. This is automatically handled by
+      the type designation system. LinkML-aware tools will know that, when the
+      type is set to, say, <classname>Motorbike</classname>, then a
+      <property>power</property> value is allowed, but a
+      <property>windshield_surface</property> value is not.</para>
+
+    </section>
+
   </section>
 
 </article>
