@@ -231,13 +231,13 @@ classes:
       <title>The “experiment” schema reusing the person schema</title>
       <programlisting>
 imports:
-  - person <co id="callout.reusability.import" />
+  - person <co xml:id="callout.reusability.import" />
 
 classes:
   Experiment:
     attributes:
       experimenter:
-        range: Person <co id="callout.reusability.ref-to-imported-class" />
+        range: Person <co xml:id="callout.reusability.ref-to-imported-class" />
         multivalued: true
       # Other attributes defining an experiment...
       </programlisting>
@@ -501,6 +501,204 @@ enums:
         they appear in the existing data.</para>
 
       </note>
+
+    </section>
+
+  </section>
+
+  <section xml:id="sect.antipatterns">
+    <title>Anti-patterns</title>
+
+    <para>This section describes typical mistakes that have been observed in
+    some LinkML schemas, and how to avoid them.</para>
+
+    <section xml:id="sect.antipatterns.referencing">
+      <title>Implementing references</title>
+
+      <para>Let us suppose you need a schema to model books and their authors.
+      You expect to have many books and many authors, with each book being
+      possibly authored by more than one author and each author possibly
+      having authored more than one book. You do not want to have to repeat
+      any information more than necessary – for example, if an author wrote
+      two books, you do not want your data to contain the first name, last
+      name, date of birth, and any other biographical information about the
+      author twice (once for each book).</para>
+
+      <para>A naive way to do this would be using the following schema:</para>
+
+      <example xml:id="example.antipatterns.referencing.wrong">
+        <title>The wrong way of implementing references</title>
+        <programlisting>
+classes:
+  BookDatabase:
+    description: The object holding the lists of books and authors.
+    tree_root: true
+    attributes:
+      books:
+        description: The list of books in this database.
+        range: Book
+        multivalued: true
+      authors:
+        description: The list of authors in this database.
+        range: Author
+        multivalued: true
+
+  Book:
+    description: An individual book.
+    attributes:
+      title:
+        range: string
+      authored_by:
+        description:
+          Identifiers for the author(s) of this book. The value must
+          match the idendifier of an Author object.
+        range: string
+        multivalued: true
+
+  Author:
+    description: An individual author.
+    attributes:
+      id:
+        description: Unique identifier for this author.
+        range: string
+      first_name:
+        range: string
+      last_name:
+        range: string
+      birthdate:
+        range: date
+      biography:
+        range: string
+        </programlisting>
+      </example>
+
+      <para>The example is pretty straightforward. In a data definition
+      language such as SQL, the <property>id</property> attribute of the
+      <classname>Author</classname> class would be called the
+      <emphasis>primary key</emphasis> of the <property>authors</property>
+      table, while the <property>authored_by</property> attribute of the
+      <classname>Book</classname> class would be called the <emphasis>foreign
+      key</emphasis> of the <property>books</property> table.</para>
+
+      <para>The problem with that approach, though, and the reason it is an
+      anti-pattern in LinkML, is that it does not use LinkML’s <link
+      xl:href="https://linkml.io/linkml/schemas/inlining.html">builtin
+      cross-referencing feature</link>. As a result, there is nothing in the
+      schema itself that can enforce the fact that a value in the
+      <property>authored_by</property> attribute of a book must match the
+      <property>id</property> value of an author. That constraint is only
+      stated in the description of the <property>authored_by</property>
+      attribute, but this is merely a statement of intention that has no real
+      effect whatsoever.  Actually enforcing the constraint is entirely left
+      at the discretion of the users of the schema (especially, the developers
+      who will use that schema in their programs).</para>
+
+      <para>In LinkML, whenever a class has an attribute or a slot that is
+      <emphasis>explicitly</emphasis> marked as being the identifier for the
+      class (by means of the <link
+      xl:href="https://w3id.org/linkml/identifier">identifier</link>
+      metaslot), then by default, any attribute or slot (anywhere else in the
+      schema) whose range is set to that class is expected to contain a
+      <emphasis>reference</emphasis> to an object of that class, rather than
+      the object itself.</para>
+
+      <para>This means that in our example, all we need to do to use the
+      proper pattern is to (1) mark the <property>id</property> attribute of
+      the <classname>Author</classname> as being the identifier for the class,
+      and (2) set the range of the <property>authored_by</property> attribute
+      to <classname>Author</classname>. (We also need to set <literal>inlined:
+      true</literal> in the definition of the <property>authors</property>
+      attribute in the <classname>BookDatabase</classname>, because here we do
+      <emphasis>not</emphasis> want to store references only: this is where
+      the authors are defined, so we need the full objects, not mere
+      references.)</para>
+
+      <example xml:id="example.antipatterns.referencing.correct">
+        <title>LinkML-powered cross-references</title>
+        <programlisting>
+classes:
+  BookDatabase:
+    description: The object holding the lists of books and authors.
+    tree_root: true
+    attributes:
+      books:
+        description: The list of books in this database.
+        range: Book
+        multivalued: true
+      authors:
+        description: The list of authors in this database.
+        range: Author
+        multivalued: true
+        inlined: true <co xml:id="callout.antipatterns.referencing.correct.inlined" />
+        inlined_as_list: true <co xml:id="callout.antipatterns.referencing.correct.inlined_as_list" />
+
+  Book:
+    description: An individual book.
+    attributes:
+      title:
+        range: string
+      authored_by:
+        description:
+          The author(s) of this book.
+        range: Author <co xml:id="callout.antipatterns.referencing.correct.reference" />
+        multivalued: true
+
+  Author:
+    description: An individual author.
+    attributes:
+      id:
+        description: Unique identifier for this author.
+        range: string
+        identifier: true <co xml:id="callout.antipatterns.referencing.correct.identifier" />
+      first_name:
+        range: string
+      last_name:
+        range: string
+      birthdate:
+        range: date
+      biography:
+        range: string
+        </programlisting>
+        <calloutlist>
+          <callout arearefs="callout.antipatterns.referencing.correct.identifier">
+            <para>This marks <property>id</property> as the identifier
+            attribute of the <classname>Author</classname> class.</para>
+          </callout>
+          <callout arearefs="callout.antipatterns.referencing.correct.reference">
+            <para>Since <classname>Author</classname> has an identifier
+            attribute, setting the range of <property>authored_by</property>
+            to <classname>Author</classname> automatically means that this is
+            attribute is expected to contain <emphasis>identifiers</emphasis>
+            of <classname>Author</classname> objects, rather than the objects
+            themselves.</para>
+          </callout>
+          <callout arearefs="callout.antipatterns.referencing.correct.inlined">
+            <para>Now that <classname>Author</classname> has an identifier
+            attribute, this is required to override the default behaviour that
+            would make this attribute expect references instead of objects
+            – the same behaviour that we want for the
+            <property>authored_by</property> attribute, but that we do not
+            want here.</para>
+          </callout>
+          <callout arearefs="callout.antipatterns.referencing.correct.inlined_as_list">
+            <para>This forces the list of <classname>Author</classname>
+            objects to be represented as a real list, rather than as
+            identifier-indexed dictionary. I recommend always setting
+            <property>inlined_as_list</property> explicitly whenever you set
+            <property>inlined: true</property>, because it is unclear, in the
+            LinkML specification, what the default value of
+            <property>inlined_as_list</property> should be.</para>
+          </callout>
+        </calloutlist>
+      </example>
+
+      <para>That last schema is very similar to the schema in <xref
+      linkend="example.antipatterns.referencing.wrong" xrefstyle="select:
+      label" />, and importantly, it describes exactly the same model. The
+      difference is that the “foreign key” constraint on the
+      <property>authored_by</property> attribute is no longer a mere statement
+      of intention – it is an actual constraint that can be enforced by
+      LinkML-aware tools.</para>
 
     </section>
 
