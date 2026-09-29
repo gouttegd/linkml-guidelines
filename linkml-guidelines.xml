@@ -506,6 +506,115 @@ enums:
 
   </section>
 
+  <section xml:id="sect.classes">
+    <title>Designing classes</title>
+
+    <section xml:id="sect.classes.attributes-over-slots">
+      <title>Favour attributes over slots</title>
+
+      <para>LinkML has two different ways of defining what most programming
+      languages would call the <emphasis>fields</emphasis> (sometimes
+      <emphasis>member fields</emphasis>) of a class: slots and
+      attributes.</para>
+
+      <para>The two methods are very similar (and not mutually exclusive: a
+      class can have both slots and attributes), the key difference being that
+      slots are defined at the level of the entire schema while attributes are
+      defined within the context of a particular class. Basically, attributes
+      are class-specific slots, or if we prefer the other way round, slots are
+      schema-wide attributes. That difference aside, slots and attributes are
+      equivalent.<footnote><para>At least in theory. In practice, bugs in
+      LinkML-Py may mean that some slot-related feature won’t necessarily
+      always work when they are applied to
+      attributes.</para></footnote></para>
+
+      <para>This means the following two schemas are describing the same
+      model:</para>
+
+      <example xml:id="example.classes.attributes-over-slots.slots">
+        <title>A class with slots</title>
+        <programlisting>
+slots:
+  first_name:
+    description: The first name of a person.
+    range: string
+  last_name:
+    description: The last name of a person.
+    range: string
+  birthdate:
+    description: The date a person was born.
+    range: date
+
+classes:
+  Person:
+    description: Represents an individual person.
+    slots:
+      - first_name
+      - last_name
+      - birth_date
+        </programlisting>
+      </example>
+
+      <example xml:id="example.classes.attributes-over-slots.attributes">
+        <title>A class with attributes</title>
+        <programlisting>
+classes:
+  Person:
+    description: Represents an individual person.
+    attributes:
+      first_name:
+        description: The first name of a person.
+        range: string
+      last_name:
+        description: The last name of a person.
+        range: string
+      birthdate:
+        description: The date a person was born.
+        range: date
+        </programlisting>
+      </example>
+
+      <para>The only difference between these two schemas is that, in the
+      first one, the <property>first_name</property>,
+      <property>last_name</property>, and <property>birthdate</property> slots
+      could be reused in another class than just the
+      <classname>Person</classname> class, whereas in the second schema, the
+      attributes are explicitly specific to the <classname>Person</classname>
+      – if we wanted to define another class (unrelated to
+      <classname>Person</classname>) that needed the same attributes, we would
+      need to define the attributes again in that other class.</para>
+
+      <para>Slots are sometimes useful, but they cause a major problem for
+      schema reusability: <emphasis>they pollute the global
+      namespace</emphasis>. And because their names directly impact the
+      serialisation of data (as explained in <xref linkend="sect.naming.data"
+      xrefstyle="select: label" />), you cannot always use naming conventions
+      to help avoiding name clashes.<footnote><para>We will see later that
+      <emphasis>slot aliases</emphasis> can serve as a workaround for that.
+      Still, it is better to avoid having to use a workaround to begin
+      with.</para></footnote></para>
+
+      <para>Another problem (though much more minor) with slots is that, when
+      they are only used in one class, they needlessly separate the various
+      parts that make up the definition of the class, and make the schema more
+      difficult to read. In <xref
+      linkend="example.classes.attributes-over-slots.slots" xrefstyle="select:
+      label" />, this is not apparent because the schema is simplistically
+      small (so the slot definitions can sit just next to the definition of
+      the class in which they are used), but it will become apparent in any
+      medium- or large-sized schema.</para>
+
+      <para>Consequently, it is <emphasis>strongly recommended</emphasis> to
+      favour the use of attributes whenever possible. Always start designing
+      your classes with attributes, and only consider turning a local
+      attribute into a global slot when it becomes clear that you will need
+      the very same attribute, with the very same meaning, in more than one
+      class.</para>
+
+    </section>
+
+  </section>
+
   <section xml:id="sect.antipatterns">
     <title>Anti-patterns</title>
 
