@@ -500,6 +500,42 @@ enums:
         or permissible values: they <emphasis>must</emphasis> use the names as
         they appear in the existing data.</para>
 
+        <para>For example, the <link
+        xl:href="https://protege.stanford.edu">Protégé ontology editor</link>
+        has a concept of “deprecation profile” to control what the editor
+        should do when obsoleting a term. A deprecation profile is a YAML file
+        that can look like this:</para>
+
+        <programlisting>
+---
+name: Gene Ontology (GO)
+description: A profile for obsoletion of entities in the Gene Ontology (GO)
+activatedBy: http://purl.obolibrary.org/obo/go.owl
+removeLogicalDefinition: true
+removeAnnotationAssertions: false
+replacedByAnnotationPropertyIri: IAO:0100001
+labelPrefix: obsolete
+annotationValuePrefix: OBSOLETE.
+preservedAnnotationAssertionPropertyIris:
+  - IAO:0000115
+textualReasonAnnotationPropertyIri: rdfs:comment
+        </programlisting>
+
+        <para>There is currently no formal schema (in LinkML or any other
+        schema definition language) for a deprecation profile, but it would be
+        easy to make one in LinkML.</para>
+
+        <para>However, while the authors of such a schema would be free to
+        name the root class however they like (maybe
+        <classname>DeprecationProfile</classname> or
+        <classname>ProtegeDeclarationProfile</classname>), they would have no
+        choice when it comes to naming the attributes. They could not, for
+        example, rename the <property>removeLogicalDefinition</property> key
+        into <property>remove_logical_definition</property>, even if that’s
+        what the LinkML <command>linter</command> tool would recommend to
+        follow the LinkML convention of using “snake case” for attribute and
+        slot names.</para>
+
       </note>
 
     </section>
@@ -589,10 +625,11 @@ classes:
       namespace</emphasis>. And because their names directly impact the
       serialisation of data (as explained in <xref linkend="sect.naming.data"
       xrefstyle="select: label" />), you cannot always use naming conventions
-      to help avoiding name clashes.<footnote><para>We will see later that
-      <emphasis>slot aliases</emphasis> can serve as a workaround for that.
-      Still, it is better to avoid having to use a workaround to begin
-      with.</para></footnote></para>
+      to help avoiding name clashes.<footnote><para>We will see later (<xref
+      linkend="sect.classes.attributes-over-slots.alias" xrefstyle="select:
+      label" />) that <emphasis>slot aliases</emphasis> can serve as a
+      workaround for that.  Still, it is better to avoid having to use a
+      workaround to begin with.</para></footnote></para>
 
       <para>Another problem (though much more minor) with slots is that, when
       they are only used in one class, they needlessly separate the various
@@ -610,6 +647,241 @@ classes:
       attribute into a global slot when it becomes clear that you will need
       the very same attribute, with the very same meaning, in more than one
       class.</para>
+
+      <section xml:id="sect.classes.attributes-over-slots.alias">
+        <title>About slot aliases</title>
+
+        <para>A possible workaround for the problem of slot names polluting
+        the global namespace (but one that is still best avoided when
+        possible) is to use <emphasis>slot aliases</emphasis>.</para>
+
+        <para>Any slot (or any attribute) in a LinkML schema can have an
+        alias, set forth by the <property>alias</property>
+        metaslot.<footnote><para>Not to be confused with the
+        <property>aliases</property> metaslot – that one is intended to
+        facilitate mappings between a LinkML schema and other resources, but
+        (contrary to <property>alias</property>), it has no significance
+        within the schema.</para></footnote> When that is the case, then the
+        defined alias is used for almost all purposes where the slot name
+        would normally be used. The slot name’s remaining purpose is to refer
+        to the slot from within the schema, for example when listing it as one
+        of the slots used by a class.</para>
+
+        <para>For an example of how slot aliases can be used, one needs look
+        no further than in LinkML’s own meta-schema, which contains the
+        following:</para>
+
+        <example xml:id="example.classes.attributes-over-slots.alias.slot_definitions">
+          <title>LinkML’s “slots” and “slot_definitions” slots (simplified excerpt)</title>
+          <programlisting>
+slots:
+  slot_definitions:
+    description: All slots defined in this schema.
+    range: slot_definition
+    multivalued: true
+    inlined: true
+    alias: slots
+
+  slots:
+    description: All slots applicable to a class.
+    range: slot_definition
+    multivalued: true
+
+classes:
+  schema_definition:
+    description: A single LinkML schema.
+    slots:
+      - slot_definitions
+
+  class_definition:
+    description: The definition of a LinkML class.
+    slots:
+      - slots
+          </programlisting>
+        </example>
+
+        <para>The problem that the LinkML developers were facing when
+        authoring their meta-schema is that the name <literal>slots</literal>
+        is used in two different places within a LinkML schema, with two
+        completely different meanings:</para>
+
+        <itemizedlist>
+
+          <listitem>
+
+            <para>in a “schema definition” (that is, at the root of a LinkML
+            schema file), this is where all the slots are defined;</para>
+
+          </listitem>
+
+          <listitem>
+
+            <para>in a “class definition”, this is where you list the slots
+            that are applicable to that particular class.</para>
+
+          </listitem>
+
+        </itemizedlist>
+
+        <para>But with slot names being global, it is not possible to have two
+        different slots with the same name, even if they are only used in two
+        completely different contexts! So the workaround was to name the first
+        slot (the one used in a schema definition, where slots are defined)
+        <literal>slot_definitions</literal>, so that the name would not
+        conflict with that of the other slot (the one used in a class
+        definition). And <property>slot_definitions</property> was given the
+        <emphasis>alias</emphasis> <literal>slots</literal>, so that it could
+        appear under this name at the root level of a LinkML schema
+        file.</para>
+
+        <para>If that sounds needlessly complicated and confusing, it’s
+        because it is. It would have been much more straigthforward and
+        easier, given that both slots are each only used in one class, to
+        define them as <emphasis>attributes</emphasis> of their respective
+        class, as follows:</para>
+
+        <example xml:id="example.classes.attributes-over-slots.alias.slot_definitions-as-attribute">
+          <title>LinkML’s “slots” defined as local attributes</title>
+          <programlisting>
+classes:
+  schema_definition:
+    description: A single LinkML schema.
+    attributes:
+      slots:
+        description: All slots defined in this schema.
+        range: slot_definition
+        multivalued: true
+        inlined: true
+
+  class_definition:
+    description: The definition of a LinkML class.
+    attributes:
+      slots:
+        description: All slots applicable to this class.
+        range: slot_definition
+        multivalued: true
+          </programlisting>
+        </example>
+
+        <para>So while slot aliasing <emphasis>can</emphasis> allow to work
+        around the issue caused by slot names being global, the use of local
+        (class-specific) attributes is overall a much simpler solution, and
+        needlessly defining global slots while giving them aliases to avoid
+        name clashes has to be considered a <link
+        linkend="sect.antipatterns">anti-pattern</link>.</para>
+
+      </section>
+
+      <section xml:id="sect.classes.attributes-over-slots.mixins">
+        <title>Grouping reusable attributes in mixins</title>
+
+        <para>An alternative to (global) slots, when you have several
+        attributes that should be reused in several unrelated classes, is to
+        declare the attributes in a dedicated <emphasis>mixin
+        class</emphasis>.</para>
+
+        <para>For example, let us suppose that many classes in your schema
+        should have the following three attributes: <property>name</property>,
+        <property>identifier</property>, and
+        <property>identifier_type</property>. The classes where those
+        attributes are not related – they don’t share a single parent class in
+        which you could define the attributes once and for all and have them
+        inherited by all the classes. At first sight, this leaves you with two
+        options:</para>
+
+        <itemizedlist>
+
+          <listitem>
+
+            <para>defining the attributes in all the classes that need them
+            – this would lead, by design, to many duplicated definitions, and
+            to a lot of churn whenever an attribute would need to be updated
+            (it would need to be updated in all the classes in which it is
+            defined);</para>
+
+          </listitem>
+
+          <listitem>
+
+            <para>defining the attributes as slots instead – they would need
+            to be defined only once, but then you are polluting the global
+            namespace (which is especially problematic with names as generic
+            as <literal>name</literal> or
+            <literal>identifier</literal>).</para>
+
+          </listitem>
+
+        </itemizedlist>
+
+        <para>Neither solution is particularly satisfying, but luckily, there
+        is a third one: create a single mixin class, define the shared
+        attributes in that class, and then make all the classes that need
+        those attributes inherit from the mixin. This could look like
+        this:</para>
+
+        <example xml:id="example.classes.attributes-over-slots.mixins">
+          <title>Using a mixin to group shared attributes</title>
+          <programlisting>
+classes:
+  IsIdentifiableMixin:
+    description: An entity that can be identified by a name or an identifier.
+    mixin: true
+    attributes:
+      name:
+        description: The name of the entity.
+        range: string
+      identifier:
+        description: An identifier for the entity.
+        range: string
+      identifier_type:
+        description: The type of identifier.
+        range: string <co xml:id="example.classes.attributes-over-slots.mixins.identifier_type" />
+
+  ResearchInstrument:
+    description: Any kind of research hardware (e.g. microscope, centrifuge, etc.).
+    mixins:
+      - IsIdentifiableEntity
+
+  InstrumentManufacturer:
+    description: A company (or other organisation) that makes research instruments.
+    mixins:
+      - IsIdentifiableEntity
+          </programlisting>
+          <calloutlist>
+            <callout arearefs="example.classes.attributes-over-slots.mixins.identifier_type">
+              <para>In a real schema this would likely be an enumeration, but
+              for this example a string will do.</para>
+            </callout>
+          </calloutlist>
+        </example>
+
+        <para>This approach allows to define the attributes only once without
+        polluting the global namespace – the only global name added is that of
+        the mixin, but since this a class name, it does not appear in instance
+        data and we are free to use any naming convention aiming at reducing
+        name clashes with other class names.</para>
+
+        <note>
+
+          <para>An additional benefit of this approach is that it allows, if
+          needed, to define once and for all in the mixin some rules that
+          should apply to all the classes that inherit the mixin.</para>
+
+          <para>For example, suppose you want to enforce that, whenever a
+          <property>identifier</property> value is present, a
+          <property>identifier_type</property> should be present as well. If
+          the attributes had been defined as (global) slots, such a rule would
+          have had to be defined in every class in which the
+          <property>identifier</property> and
+          <property>identifier_type</property> are applicable. But with the
+          attributes defined in the
+          <classname>IsIdentifiableMixin</classname>, the rule can be defined
+          in that mixin instead – classes that inherit the mixin will get both
+          the attributes <emphasis>and</emphasis> the associated rules!</para>
+
+        </note>
+
+      </section>
 
     </section>
 
