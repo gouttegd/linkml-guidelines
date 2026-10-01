@@ -540,6 +540,293 @@ textualReasonAnnotationPropertyIri: rdfs:comment
 
     </section>
 
+    <section xml:id="sect.naming.conventions">
+      <title>Recommended naming conventions</title>
+
+      <para>We recommend the following conventions for naming elements within
+      a LinkML schema.  Several of them are already recommended by the LinkML
+      project itself (for those, the <command>linkml lint</command> tool can
+      be used to, among other things, check whether your schema is properly
+      following them).</para>
+
+      <section xml:id="sect.naming.conventions.classes">
+        <title>Classes</title>
+
+        <para>Use “Pascal case” (no spaces between capitalized words,
+        <literal>LikeThis</literal>; also known as “upper camel case”). Make
+        sure to use names that are distinctive enough to reduce the likelihood
+        of name conflict if the schema is reused (imported) by another schema;
+        the easiest way to achieve that is to choose a suitable “prefix” and
+        to prepend it to all names.</para>
+
+        <note>
+
+          <para>We do not mean a <emphasis>CURIE-like</emphasis> prefix, where
+          the prefix is separated from the base name by a colon (as in
+          <literal>Prefix:Name</literal>)!  Instead, we mean a prefix that
+          becomes integral part of the name. That prefix should be, as much as
+          possible, specific to the schema.</para>
+
+          <para>For example, the proposed schema for the version 1.1 of the
+          <link xl:href="https://pidinst.org">Persistent Identification of
+          Instruments</link> specification will use a
+          <literal>PIDInst</literal> prefix, yielding class names such as
+          <literal>PIDInstOwner</literal>,
+          <literal>PIDInstManufacturer</literal>, etc.</para>
+
+        </note>
+
+        <para>If the presence of the prefix is not desired in the RDF
+        representation of the data (where it would indeed not be needed, since
+        RDF properties are identified by full URIs rather than mere names and
+        are therefore much less likely to conflict across schemas), it is
+        always possible to explicitly specify the class URI for each class
+        (instead of letting LinkML infer it from the schema’s default prefix
+        and the class’ name) so that it does <emphasis>not</emphasis> include
+        the prefix:</para>
+
+        <example xml:id="example.naming.conventions.class_uri">
+          <title>Explicitly specifing a prefix-less class URI</title>
+          <programlisting>
+prefixes:
+  myschema: https://example.org/myschema/
+default_prefix: myschema
+
+classes:
+  MySchemaManufacturer: <co xml:id="example.naming.conventions.class_uri.classname" />
+    class_uri: myschema:Manufacturer <co xml:id="example.naming.conventions.class_uri.classuri" />
+          </programlisting>
+          <calloutlist>
+            <callout arearefs="example.naming.conventions.class_uri.classname">
+              <para>All classes in this schema are by convention prefixed with
+              <literal>MySchema</literal>. This reduces the likelihood of name
+              conflicts when the schema is reused in another context, since
+              <literal>Manufacturer</literal> is a pretty generic name.</para>
+            </callout>
+            <callout arearefs="example.naming.conventions.class_uri.classuri">
+              <para>The class URI is explicitly set to
+              <literal>https://example.org/myschema/Manufacturer</literal>. By
+              default, the inferred class URI would have been
+              <literal>https://example.org/myschema/MySchemaManufacturer</literal>,
+              which would have been needlessly redundant – in RDF context, the
+              <literal>https://example.org/myschema/</literal> URI prefix
+              already confers unicity.</para>
+            </callout>
+          </calloutlist>
+        </example>
+
+      </section>
+
+      <section xml:id="sect.naming.conventions.mixins">
+        <title>Mixin classes</title>
+
+        <para>Mixin classes are merely a special type of class. They should
+        use the same convention as for other classes, <emphasis>but</emphasis>
+        with an explicit <literal>Mixin</literal> suffix appended to the
+        name.</para>
+
+        <para>For example, a mixin class that would originally be named
+        <literal>Foo</literal> should in fact be named
+        <literal><replaceable>MySchema</replaceable>FooMixin</literal> (where
+        <replaceable>MySchema</replaceable> is the schema-specific prefix
+        prepended to all class names, as per <xref
+        linkend="sect.naming.conventions.classes" xrefstyle="select: label"
+        />).</para>
+
+        <para>The <literal>Mixin</literal> suffix makes it easier to instantly
+        figure out whether a given class is a mixin class or a “normal” (i.e.,
+        non-mixin) class. This in turn makes it easier to spot possible
+        misuses of mixin classes, such as making a non-mixin class inherit
+        (through <literal>is_a</literal>) from a mixin class – something that
+        is formally forbidden in LinkML, but that most LinkML tools do not
+        adequately flag as a schema error.</para>
+
+      </section>
+
+      <section xml:id="sect.naming.conventions.single-use-classes">
+        <title>Classes that are only used in one context</title>
+
+        <para>Sometimes, a schema may need a class to describe a complex
+        (non-scalar) type of value that will only ever be used for one
+        particular attribute of one particular class.</para>
+
+        <para>For example, let us suppose you need a
+        <classname>Person</classname> class in which you can also store
+        information about the computer account of the person, as in:</para>
+
+        <programlisting>
+{
+    "first_name": "Stephen",
+    "last_name": "Falken",
+    "account_info":
+    {
+        "login_name": "joshua",
+        "group_name": "admins"
+    }
+}
+        </programlisting>
+
+        <para>The value expected under the <property>account_info</property>
+        attribute is a complex one, that can only be described by a class in
+        LinkML. And even if that class is never used for anything else than to
+        specify the range of the <property>account_info</property> attribute,
+        that is irrelevant for LinkML, which has no concept such as a “local”
+        or “inline” class definition (defining a class only where it is used).
+        All class definitions in LinkML are necessarily global.</para>
+
+        <para>In such a case, it might be useful to name the class in such a
+        way that makes it clear that the class is only intended to ever be
+        used for a particular attribute of a particular “enclosing” class. We
+        do not make any strong recommendation here, but we would suggest
+        something like
+        <literal><replaceable>MySchema</replaceable><replaceable>Person</replaceable><replaceable>AccountInfo</replaceable></literal>
+        (<replaceable>MySchema</replaceable> being the schema-specific class
+        suffix, <replaceable>Person</replaceable> being the base name of the
+        enclosing class, and <replaceable>AccountInfo</replaceable> being
+        derived from the name of the attribute).</para>
+
+      </section>
+
+      <section xml:id="sect.naming.conventions.slots">
+        <title>Slots and attributes</title>
+
+        <para>Use “snake case” (lowercase words separated by underscores,
+        <literal>like_this</literal>) for the names of slots and attributes,
+        unless pre-existing data forces you to do otherwise.</para>
+
+        <para>We do <emphasis>not</emphasis> recommend prefixing slot names
+        with a schema-specific prefix, as we do for class names. This is
+        because, as explained in <xref linkend="sect.naming.data"
+        xrefstyle="select: label" />, slot names directly “leak” into instance
+        data, and a schema-specific prefix would most likely be undesired in
+        most cases.</para>
+
+        <para>Instead, to avoid name conflicts between slots across several
+        schemas, we more radically recommend <emphasis>avoiding slots
+        altogether</emphasis>, as explained later in <xref
+        linkend="sect.classes.attributes-over-slots" xrefstyle="select: label"
+        />.</para>
+
+      </section>
+
+      <section xml:id="sect.naming.conventions.enums">
+        <title>Enumerations and permissible values</title>
+
+        <para>Enumeration names should follow the same conventions as class
+        names (<xref linkend="sect.naming.conventions.classes"
+        xrefstyle="select: label" />), including the case where an enumeration
+        is only used once throughout the entire schema (<xref
+        linkend="sect.naming.conventions.single-use-classes"
+        xrefstyle="select: label" />). We do not recommend appending a
+        <literal>Enum</literal> suffix to the name – instead, we suggest that
+        the name of an enumeration should indicate what one of the permissible
+        values is, not what the enumeration itself is (which is also why the
+        name should be in singular form, not in plural form).</para>
+
+        <para>Names of permissible values (<acronym>PVs</acronym>) should be
+        decided carefully, keeping in mind that, like the names of slots and
+        attributes, they “leak” into instance data (but unlike slot names, PV
+        names do <emphasis>not</emphasis> live in the global namespace – they
+        are local to the enumeration that defines them, so name conflicts
+        between PV names across enumerations – let alone across schemas – are
+        not a thing to worry about).</para>
+
+        <para>We do not make strong recommendation regarding the style of PV
+        names (e.g. Pascal case, snake case, etc.). We only strongly recommend
+        to</para>
+
+        <itemizedlist>
+
+          <listitem>
+
+            <para>use a consistent style, whatever it is: for example, avoid
+            mixing Pascal-cased and snake-cased PV names in the same schema
+            (<foreignphrase>a fortiori</foreignphrase> in the same
+            enumeration);</para>
+
+          </listitem>
+
+          <listitem>
+
+            <para>avoid spaces, and more generally (though it may not always
+            be possible) any kind of “special” characters.</para>
+
+          </listitem>
+
+        </itemizedlist>
+
+        <para>When a PV name does contain special characters (and especially
+        if it <emphasis>starts</emphasis> with a special character), we do
+        strongly recommend to assign to it a <property>title</property> free
+        of special characters. This is to allow LinkML code generators to
+        produce developer-friendly symbols for the permissible values.</para>
+
+        <para>For example, the schema describing the <link
+        xl:href="https://mapping-commons.github.io/sssom/dev/">SSSOM
+        specification</link> defines a
+        <classname>MappingCardinality</classname> enumeration with permissible
+        values such as <literal>1:1</literal> or <literal>1:n</literal>.
+        Without any explicitly specified title, LinkML code generators would
+        produce code symbols like <literal>NUMBER1_COLON1</literal> (because
+        they must follow the syntactic rules of the language they are
+        producing code for, and many languages do not allow a code symbol to
+        start with a number – hence the starting “1” being rendered as
+        <literal>NUMBER1</literal>), which is unwieldy and meaningless. To
+        avoid this, the PVs are given a <property>title</property> from which
+        the code generator can derive more meaningful symbols:</para>
+
+        <example xml:id="example.naming.conventions.enums.title">
+          <title>Permissible values with explicit titles</title>
+          <programlisting>
+enums:
+  MappingCardinality:
+    permissible_values:
+      "1:1": <co xml:id="example.naming.conventions.enums.title.name" />
+        title: one to one <co xml:id="example.naming.conventions.enums.title.title" />
+      "1:n":
+        title: one to many
+          </programlisting>
+          <calloutlist>
+            <callout arearefs="example.naming.conventions.enums.title.name">
+              <para>This is the name of the permissible value, as it must
+              appear in instance data.</para>
+            </callout>
+            <callout arearefs="example.naming.conventions.enums.title.title">
+             <para>This will make the code generators produce a symbol like
+             <literal>ONE_TO_ONE</literal> to represent this PV in
+             code.</para>
+            </callout>
+          </calloutlist>
+        </example>
+
+        <para>Another case where explicitly assigning titles to permissible
+        values is a good idea is when an enumeration has PVs that differ only
+        by their case:</para>
+
+        <example xml:id="example.naming.conventions.enums.case">
+          <title>Permissible values with case-sensitive names</title>
+          <programlisting>
+enums:
+  ElectricalPotentialUnit:
+    permissible_values:
+      mV:
+        title: milli volt
+      MV:
+        title: mega volt
+          </programlisting>
+        </example>
+
+        <para>Most, if not all, code generators in LinkML would not know how
+        to deal with this situation without the explicitly assigned titles:
+        they would generate the <emphasis>same symbol</emphasis>
+        (<literal>MV</literal>) to represent both the <literal>mV</literal>
+        and the <literal>MV</literal> values (which would most likely trigger
+        a compilation error when the generated code is later used).</para>
+
+      </section>
+
+    </section>
+
   </section>
 
   <section xml:id="sect.classes">
