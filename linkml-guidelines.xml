@@ -369,6 +369,67 @@ classes:
     <replaceable>S1</replaceable> and <replaceable>S2</replaceable> remain the
     same regardless of how reusability is achieved.</para>
 
+    <section xml:id="sect.extensibility.flexibility">
+      <title>Extensibility vs flexibility</title>
+
+      <para>We need to further distinguish between a schema that is
+      <emphasis>extensible</emphasis> and a schema that is
+      <emphasis>flexible</emphasis>. Ultimately, both extensibility and
+      flexibility have the same goal: making it possible to use a schema to do
+      things that the original authors of the schema did not imagine – such as
+      dealing with a type of data that they could not have foreseen, or a use
+      case that they did not consider.</para>
+
+      <para>In a nutshell, extensibility aims to achieve that goal by making
+      it possible to extend the schema to fit the new requirements;
+      flexibility, by making it possible to use the existing data structures
+      to fit the new requirememts, without having to change (extend) the
+      schema at all.</para>
+
+      <para>One way of making a schema flexible is to have some generic data
+      structure, specially reserved for the representation of arbitrary,
+      unknown data.</para>
+
+      <para>For example, the <link
+      xl:href="https://mapping-commons.github.io/sssom/">SSSOM
+      specification</link> reserves a <property>other</property> field,
+      intended to store arbitrary key-value pairs to allow SSSOM users to
+      store additional mapping metadata, while staying strictly within the
+      boundaries of the SSSOM schema – a SSSOM file may contain dozens or even
+      hundreds of custom properties in its <property>other</property> fields,
+      it will still remain strictly compliant with the SSSOM schema.</para>
+
+      <para>Almost by definition, there are always some limits to what is
+      doable with a flexible schema. For example, the aforementioned
+      <property>other</property> field of the SSSOM schema does not allow to
+      store anything else than plain strings (no support for typing or complex
+      structures). Some schemas may have more elaborate generic data
+      structures, possibly with some built-in type system, but this may come
+      at the expense of significant complexity – and may still not be enough
+      to cover all unforeseen use cases.</para>
+
+      <para>Another issue with flexibility is that there is typically no way
+      to enforce a consistent and interoperable use of the flexible features.
+      Taking again the SSSOM example, anyone can use the
+      <property>other</property> field to store any additional metadata they
+      want, but there is no guarantee that everyone will understand and know
+      how to exploit said additional metadata. That field can thus easily be
+      abused and lead to SSSOM files that are all compliant with the SSSOM
+      spec, but that cannot be fully understood by anyone else than their
+      original authors.</para>
+
+      <para>This document is more concerned about extensibility than
+      flexibility – in fact, one aim of this document is to promote schemas
+      that are easy enough to extend that they don’t need to be very
+      flexible –, but the two concepts are not mutually exclusive. It may be
+      desirable for a schema to be simultaneously (a) flexible enough that at
+      least some basic unforeseen use cases can be covered with just the
+      original schema, and (b) easily extensible so that more complex
+      unforeseen use cases can be dealt with by creating an extended
+      schema.</para>
+
+    </section>
+
   </section>
 
   <section xml:id="sect.naming">
