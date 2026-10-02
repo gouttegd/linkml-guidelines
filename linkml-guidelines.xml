@@ -43,19 +43,26 @@
 
         <listitem>
 
-          <para>Unfortunately, LinkML’s own documentation is often lacking.
-          Several features are poorly documented, if at all. Among other
-          effects, this can lead some schema authors to devise sometimes
-          needlessly complicated solutions to achieve something that could be
-          done much more easily using available LinkML features, simply
-          because they are unaware of said features or don’t realise what they
-          can be used for.</para>
+          <para>There is very little available guidance on how to create
+          schemas that are <emphasis>extensible</emphasis> and
+          <emphasis>reusable</emphasis>.</para>
 
         </listitem>
 
         <listitem>
 
-          <para>Also unfortunately, several aspects of LinkML are critically
+          <para>LinkML’s own documentation is often lacking. Several features
+          are poorly documented, if at all. Among other effects, this can lead
+          some schema authors to devise sometimes needlessly complicated
+          solutions to achieve something that could be done much more easily
+          using available LinkML features, simply because they are unaware of
+          said features or don’t realise what they can be used for.</para>
+
+        </listitem>
+
+        <listitem>
+
+          <para>Several aspects of LinkML are critically
           <emphasis>underspecified</emphasis>. This means that some features
           cannot be relied upon, because there are little to no guarantees
           that they would be supported in the same way across different
@@ -69,14 +76,6 @@
           you are using.  Underspecified features are also a risk in the
           long-term, because they may work one way in a given version of
           LinkML, and another way in a future version.</para>
-
-        </listitem>
-
-        <listitem>
-
-          <para>There is very little available guidance on how to create
-          schemas that are <emphasis>extensible</emphasis> and
-          <emphasis>reusable</emphasis>.</para>
 
         </listitem>
 
@@ -133,9 +132,10 @@
     <title>About schema reusability</title>
 
     <para>One particular aims of those guidelines is to promote
-    <emphasis>reusability</emphasis> and <emphasis>extensibility</emphasis> of
-    LinkML schemas. As a preliminary step, we need to clearly distinguish
-    between “reusing a model” and “reusing a schema”.</para>
+    <emphasis>reusability</emphasis> of LinkML schemas. As a preliminary step,
+    we need to clarify what reusability actually means, and in particular, to
+    clearly distinguish between “reusing a model” and “reusing a
+    schema”.</para>
         
     <note>
 
@@ -272,10 +272,102 @@ classes:
 
     <para>Reusing a <emphasis>schema</emphasis> is more difficult. Or, more
     precisely, designing a schema in such a way that it can be easily reused
-    in another schema is more difficult.<footnote><para>Though of course this
-    is not apparent with our “Person” example, given its
+    (imported) in another schema is more difficult.<footnote><para>Though of
+    course this is not apparent with our “Person” example, given its
     simplicity.</para></footnote> One big aim of this document is to help
     schema authors to do precisely that.</para>
+
+  </section>
+
+  <section xml:id="sect.extensibility">
+    <title>About schema extensibility</title>
+
+    <para>Another aim of this document is to promote the
+    <emphasis>extensibility</emphasis> of LinkML schemas.</para>
+
+    <para>We define a schema as being “extensible” if it is possible to create
+    modified versions of the schema in such a way that at least
+    <emphasis>some</emphasis> compatibility is preserved between the versions
+    of the schema.</para>
+
+    <para>If we assume an original schema <replaceable>S1</replaceable> and a
+    modified schema <replaceable>S2</replaceable>, as well as a piece of
+    instance data <replaceable>D1</replaceable> valid against
+    <replaceable>S1</replaceable> and a piece of instance data
+    <replaceable>D2</replaceable> valid against <replaceable>S2</replaceable>,
+    we can define the following compatibility scenarios:</para>
+
+    <itemizedlist>
+
+      <listitem>
+
+        <para>No compatibility: <replaceable>D1</replaceable> is only valid
+        against <replaceable>S1</replaceable> and
+        <replaceable>D2</replaceable> is only valid against
+        <replaceable>S2</replaceable>.</para>
+
+      </listitem>
+
+      <listitem>
+
+        <para>Backward compatibility: <replaceable>D1</replaceable> is
+        additionally valid against <replaceable>S2</replaceable>. Therefore,
+        <replaceable>S2</replaceable> can be said to be
+        <emphasis>backward-compatible</emphasis> with
+        <replaceable>S1</replaceable>. <footnote><para>There is unfortunately
+        an inherent ambiguity in the use of the words “backward” and
+        “forward”. Here, we use “backward” because we are considering
+        compatibility from the point of view of the schemas: the newer schema
+        (<replaceable>S2</replaceable>) can accept data “from the back” (data
+        that was intended to be valid against the older schema
+        <replaceable>S1</replaceable>).</para></footnote></para>
+
+      </listitem>
+
+      <listitem>
+
+        <para>Backward <emphasis>and</emphasis> forward compatibility:
+        <replaceable>D2</replaceable> is additionally valid against
+        <replaceable>S1</replaceable>. Therefore <replaceable>S1</replaceable>
+        can be said to be <emphasis>forward-compatible</emphasis> with
+        <replaceable>S2</replaceable>. Or, we can say that there is
+        <emphasis>bidirectional interoperability</emphasis> between
+        <replaceable>S1</replaceable> and
+        <replaceable>S2</replaceable>.</para>
+
+      </listitem>
+
+    </itemizedlist>
+
+    <para>In general, the “no compatibility” scenario must be considered the
+    <emphasis>default outcome</emphasis> whenever a new schema is derived from
+    a pre-existing one, if no special considerations were given to
+    interoperability. One aim of this document is to promote, minimally,
+    “backward compatibility”, and ideally “bidirectional
+    interoperability”.</para>
+
+    <para>Of note, it does not really matter <emphasis>who</emphasis> is
+    creating the modified schema <replaceable>S2</replaceable>. It could be a
+    third party independently creating their own “fork” of the original schema
+    for their own needs, or it could also be the authors of the original
+    schema working on a new version intended to supersede the first version.
+    The interoperability concerns remain the same, and making the original
+    schema easily extensible benefits both cases.</para>
+
+    <para>Also, as far as interoperability is concerned, it does not really
+    matter whether <replaceable>S2</replaceable> is derived from
+    <replaceable>S1</replaceable> by “reusing the model” or by “reusing the
+    schema”. As per <xref linkend="sect.reusability" xrefstyle="select: label"
+    />, the former would mean that <replaceable>S2</replaceable> describes the
+    same model as <replaceable>S1</replaceable> (modulo the
+    <replaceable>S2</replaceable>-specific changes) but is actually
+    independent from <replaceable>S1</replaceable>; the latter would mean that
+    <replaceable>S2</replaceable> imports <replaceable>S1</replaceable> and
+    then adds its changes on top of it.  In this document, we favour (as
+    already mentioned in the aforementioned section) the reusability of
+    schemas, but the interoperability concerns between
+    <replaceable>S1</replaceable> and <replaceable>S2</replaceable> remain the
+    same regardless of how reusability is achieved.</para>
 
   </section>
 
