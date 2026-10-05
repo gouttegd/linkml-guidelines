@@ -432,6 +432,118 @@ classes:
 
   </section>
 
+  <section xml:id="sect.versioning">
+    <title>Versioning of schemas</title>
+
+    <para>Any schema that is intended to be reusable outside of the context in
+    which it was originally developed should have a clear versioning policy,
+    describing what downstream users of the schema might expect in the future
+    when newer versions of the schema are released.<footnote><para>We could
+    argue that having a clear versioning policy is useful even for a schema
+    that is <emphasis>not</emphasis> intended to be reused outside of its
+    original context.</para></footnote></para>
+
+    <section xml:id="sect.versioning.sssom">
+      <title>Example: The SSSOM case</title>
+
+      <para>This document does not want to be too “prescriptive” about the
+      versioning policy, as this is something that may need to be tailored for
+      every individual project. Instead, we will use the versioning policy of
+      the <link xl:href="https://mapping-commons.github.io/sssom/">SSSOM
+      specification</link> as an illustrative example.<footnote><para>The fact
+      that the author of this document also happens to be the author of
+      SSSOM’s versioning policy is <emphasis>not</emphasis> a
+      coincidence.</para></footnote></para>
+
+      <para>The SSSOM schema uses a fairly common versioning scheme where each
+      version of the schema is identified by two numbers
+      <replaceable>X</replaceable>.<replaceable>Y</replaceable>, where
+      <replaceable>X</replaceable> is the <emphasis>major version</emphasis>
+      and <replaceable>Y</replaceable> is the <emphasis>minor
+      version</emphasis>. The crux of the versioning policy is that the only
+      changes that are allowed in a minor version are changes that do not
+      break backward compatibility with any previous minor version in the same
+      major branch. That is, data that is valid against a version
+      <replaceable>X</replaceable>.<replaceable>Y</replaceable> of the schema
+      must still be considered valid against any version
+      <replaceable>X</replaceable>.<replaceable>Y+n</replaceable>.</para>
+
+      <para>Essentially, this means that a minor version can only ever
+      <emphasis>add</emphasis> things to the schema (new classes, new
+      attributes, new enumerations, new permissible values), it can never
+      <emphasis>remove</emphasis> anything. Any removal of an element (e.g. an
+      attribute in a class) could make existing data invalid and is therefore
+      <emphasis>forbidden</emphasis> in a minor version. This prohibition
+      applies to <emphasis>renaming</emphasis>, since renaming an element is
+      in fact no different from (i) adding an element with the new name (which
+      is fine in a minor version), and (ii) removing the element with the old
+      name (which is forbidden).</para>
+
+      <para>This also means that a minor version cannot add new constraints,
+      if those constraints are stricter than those of previous minor versions.
+      For example, an integer-typed attribute whose range was previously
+      constrained to a value between 0 and 100 cannot be further constrained
+      to a value between 0 and 50, because this would invalidate existing data
+      where that attribute has a value between 50 and 100 (<foreignphrase>a
+      contrario</foreignphrase>, it is fine to <emphasis>relax</emphasis>
+      constraints: a new minor version could perfectly define the new expected
+      range between -100 and 100, because this would not invalidate existing
+      data). Likewise, an attribute that was previously
+      <emphasis>optional</emphasis> cannot be made
+      <emphasis>required</emphasis>.</para>
+
+      <para>This does not preclude a minor version from
+      <emphasis>deprecating</emphasis> an element when this is deemed useful
+      – as long as the deprecated element remains in the schema and data that
+      makes use of it is still accepted by the new schema.</para>
+
+      <para>Conversely, there are <emphasis>no</emphasis> constraints about
+      what can happen in a new major version. Basically, a new major version
+      of the SSSOM schema, if there is ever one,<footnote><para>There is no
+      plan to ever make a SSSOM 2.0 in the foreseeable
+      future.</para></footnote> will have to be considered as a
+      <emphasis>completely new schema</emphasis>, unrelated to any previous
+      major version.  As such, there would be absolutely no expectation for
+      the new major version to be backward compatible with previous versions.
+      Depending on the reasons that may justify the new major versions, the
+      two following scenarios are equally likely and both valid under the
+      versioning policy:</para>
+
+      <itemizedlist>
+
+        <listitem>
+
+          <para>the authors strive to minimize the breaking changes, changing
+          only the few things that <emphasis>need</emphasis> changing while
+          keeping most of the schema backward compatible whenever
+          possible;</para>
+
+        </listitem>
+
+        <listitem>
+
+          <para>the authors decide that, since the new version will break at
+          least a few things anyway, they will use that opportunity to make a
+          “clean break”, and re-design the schema almost entirely without
+          preserving anything from the previous version.</para>
+
+        </listitem>
+
+      </itemizedlist>
+
+      <para>When a new major version introduces breaking changes (which is,
+      under the SSSOM versioning policy, kind of the definition of a major
+      version), the authors may want to provide migration paths from the
+      previous major version. With LinkML schemas, presumably the best way to
+      do that would be through <link
+      xl:href="https://linkml.io/linkml-map/">LinkML-Map
+      transformations</link>, but this is out of scope for this
+      document.</para>
+
+    </section>
+
+  </section>
+
   <section xml:id="sect.naming">
     <title>Considerations about naming</title>
 
