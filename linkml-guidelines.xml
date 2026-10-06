@@ -1567,6 +1567,86 @@ classes:
 
   </section>
 
+  <section xml:id="sect.enums">
+    <title>Designing enumerations</title>
+
+    <section xml:id="sect.enums.inheritance">
+      <title>Avoid enum inheritance</title>
+
+      <para>In theory, enum inheritance allows to define an enumeration by
+      building on top on another, pre-existing enumeration – very much like
+      class inheritance allows to build a class on top of another class. For
+      example, if you have an enumeration <replaceable>Foo</replaceable> that
+      contains a dozen of permissible values and you need another enumeration
+      <replaceable>Bar</replaceable> which should contain with those same
+      values <emphasis>plus</emphasis> some additional values, it might be
+      convenient to make <replaceable>Bar</replaceable> inherit from
+      <replaceable>Foo</replaceable>, so that you don’t have to define the
+      common dozen of values twice (once in each enumeration).</para>
+
+      <para>However, while that possibility theoretically exists in LinkML, it
+      should not be used, at least for the time being. Enum inheritance in
+      LinkML is plagued by two issues that make the feature unreliable.</para>
+
+      <para>The first issue is that there are <emphasis>two different
+      ways</emphasis> of making an enum inherit from another:</para>
+
+      <itemizedlist>
+
+        <listitem>
+
+          <para>using the <property>is_a</property> metaslot (the same already
+          used for class and slot inheritance);</para>
+
+        </listitem>
+
+        <listitem>
+
+          <para>using the <property>inherits</property> metaslot.</para>
+
+        </listitem>
+
+      </itemizedlist>
+
+      <para>It is unclear which of those two slots should actually be used to
+      make an enumeration inherit from another, because LinkML’s meta-schema
+      is contradicting its own documentation here: according to the
+      documentation, the <property>is_a</property> metaslot is only intended
+      for classes and slots, but the schema actually allows the use of
+      <property>is_a</property> on enumerations. And at least parts of the
+      LinkML-Py reference implementations only expect
+      <property>is_a</property>, not <property>inherits</property> to be used
+      on enumerations – even though <property>inherits</property> is the
+      metaslot that the documentation clearly presents as being intended for
+      enumerations.</para>
+
+      <para>The second issue is that support for enum inheritance (whether
+      through <property>is_a</property> or through
+      <property>inherits</property>) in LinkML-Py is pretty scarce, almost
+      inexistent.  In particular, as far as the author of this document is
+      aware, none of the code generators support it.
+      <classname>SchemaView</classname>, the main object in LinkML-Py to
+      access the contents of a schema, does provide methods to get the
+      “parent” of an enumeration (through <property>is_a</property> only, not
+      through <property>inherits</property>) but does <emphasis>not</emphasis>
+      allow to infer the “induced permissible values” (values that should be
+      inherited from the parent).</para>
+
+      <para>Therefore, and at least until (1) the uncertainty about the
+      intended proper way of making an enum inherit from another is
+      lifted,<footnote><para>LinkML developers are nominally aware of that
+      uncertainty, see LinkML issues <link
+      xl:href="https://github.com/linkml/linkml/issues/3957">#3957</link> and
+      <link
+      xl:href="https://github.com/linkml/linkml/issues/3958">#3958</link>.</para></footnote>
+      and (2) enum inheritance starts getting actual support in the reference
+      implementation – which probably cannot happen until (1) is solved –,
+      enum inheritance is best avoided.</para>
+
+    </section>
+
+  </section>
+
   <section xml:id="sect.antipatterns">
     <title>Anti-patterns</title>
 
