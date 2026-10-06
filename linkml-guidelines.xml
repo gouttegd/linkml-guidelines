@@ -505,8 +505,8 @@ classes:
       <emphasis>completely new schema</emphasis>, unrelated to any previous
       major version.  As such, there would be absolutely no expectation for
       the new major version to be backward compatible with previous versions.
-      Depending on the reasons that may justify the new major versions, the
-      two following scenarios are equally likely and both valid under the
+      Depending on the reasons that may justify the new major version, the two
+      following scenarios are equally likely and both valid under the
       versioning policy:</para>
 
       <itemizedlist>
@@ -539,6 +539,134 @@ classes:
       xl:href="https://linkml.io/linkml-map/">LinkML-Map
       transformations</link>, but this is out of scope for this
       document.</para>
+
+    </section>
+
+    <section xml:id="sect.versioning.forms">
+      <title>Versioning forms</title>
+
+      <para>LinkML schemas can contain, alongside other schema-level metadata
+      (such as who authored the schema and when), an explicit version string
+      in the <property>version</property> metaslot. However, it is important
+      to note that this metaslot is informational only. It has no particular
+      significance and LinkML tools make no use of it.</para>
+
+      <para>In fact, more generally LinkML has no built-in support for schema
+      versioning.  There is no way, for example, to instruct LinkML to import
+      a particular version of a schema. Controlling which version of a schema
+      is imported must be done <emphasis>outside</emphasis> of the importing
+      schema.</para>
+
+      <note>
+
+        <para>This may seem like a limitation of LinkML, but it is in fact a
+        fairly common compromise in many programming languages – the issue of
+        dealing with versions is kept out of the language and delegated
+        elsewhere. Look at Python for example: The Python language itself also
+        has no builtin support for versioning. When you write <literal>import
+        <replaceable>foo</replaceable></literal> in Python code, at this level
+        you do not control which version of <replaceable>foo</replaceable>
+        will be imported – it will be whichever version happens to be
+        available in the Python environment. Managing versions is done
+        “outside” of the Python code, at the level of the project, using tools
+        such as Poetry or UV.</para>
+
+      </note>
+
+      <para>This leads us to distinguish between several forms of “schema
+      version”:</para>
+
+      <itemizedlist>
+
+        <listitem>
+
+          <para>the version set forth in the dedicated, aforementioned
+          <property>version</property> metaslot of the schema – we will call
+          that the “schema version proper”;</para>
+
+        </listitem>
+
+        <listitem>
+
+          <para>the version that may appear in whatever “canonical” URI is
+          used to publish the schema – we will call that the “publication URI
+          version”;</para>
+
+        </listitem>
+
+        <listitem>
+
+          <para>the version that may appear in the URI of all the elements
+          defined by the schema – we will call that the “element URI
+          version”.</para>
+
+        </listitem>
+
+      </itemizedlist>
+
+      <para>As already noted, the schema version proper is informational only;
+      the publication version is the one that can actually be used to control
+      which particular version of a schema is used (in particular, which
+      version is imported, when the schema is reused by another importing
+      schema); and the element URI version is the one that matters when
+      working in RDF context.</para>
+
+      <para>Of note, the publication version and the URI version may not exist
+      – there is no requirement for any version information to appear in the
+      URI at which a schema is published and in the URIs identifying schema
+      elements. But we recommend that such version information should in fact
+      be present in those URIs.</para>
+
+      <para>Consequently, we also recommend that schema authors think
+      carefully about they are going to manage the three different versions.
+      As for the versioning policy itself, this may need to be tailored for
+      the needs of every project, but we make the following
+      suggestions:</para>
+
+      <itemizedlist>
+
+        <listitem>
+
+          <para>The schema version proper should always be set to the “full”
+          version of the schema – that is, it should contain all the
+          components that make up the version, if the versioning policy calls
+          for a version made of several components (e.g. the major and minor
+          version numbers, as in the SSSOM example).</para>
+
+        </listitem>
+
+        <listitem>
+
+          <para>The publication URI should similarly mention all components.
+          However, if the versioning policy specifies that some versions are
+          expected to be backward compatible, then there may also be an
+          additional, single publication URI for all versions where backward
+          compatibility is preserved. That URI can then be made to point to
+          the most recent backward compatible version. For example, assuming a
+          versioning policy similar to the one used by SSSOM, there could be a
+          single URI mentioning only the major version number
+          <replaceable>X</replaceable>, that could be made to point initially
+          to version <literal><replaceable>X</replaceable>.0</literal> of the
+          schema, then to version
+          <literal><replaceable>X</replaceable>.1</literal> when it is
+          available, then to version
+          <literal><replaceable>X</replaceable>.2</literal>, and so
+          forth.</para>
+
+        </listitem>
+
+        <listitem>
+
+          <para>The element URI version should preferably omit any version
+          component that does not convey a backward-incompatible change.
+          Taking again the example of SSSOM’s versioning policy, that means
+          that the URIs identifying schema elements (typically automatically
+          derived from the schema’s <literal>default_prefix</literal> setting)
+          should only contain the major version number.</para>
+
+        </listitem>
+
+      </itemizedlist>
 
     </section>
 
