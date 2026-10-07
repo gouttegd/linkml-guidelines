@@ -670,6 +670,147 @@ classes:
 
     </section>
 
+    <section xml:id="sect.versioning.embedding">
+      <title>Embedding fine-grained version information in the schema</title>
+
+      <para>If the versioning policy specifies that some versions should be
+      backward-compatible, then it is possible to encode directly in the
+      latest version in the schema the differences between that version and
+      any previous version it is backward-compatible with.</para>
+
+      <para>We will again take the SSSOM schema as an example, where a new
+      minor version should remain backward-compatible with any previous minor
+      version in the same major branch – meaning, as we have already seen,
+      that the new minor version can only <emphasis>add</emphasis> new
+      elements to the schema.</para>
+
+      <para>In the SSSOM schema, any element added in a minor version is
+      explicitly tagged with a custom structured annotation indicating in
+      which version of the schema the element was added:</para>
+
+      <example xml:id="example.versioning.embedding.sssom">
+        <title>Addition of a new element in the SSSOM schema</title>
+        <programlisting>
+enums:
+  sssom_version_enum: <co xml:id="example.versioning.embedding.sssom.enum" />
+    permissible_values:
+      "1.0":
+        title: SSSOM specification version 1.0
+      "1.1":
+        title: SSSOM specification version 1.1
+
+classes:
+  Versionable: <co xml:id="example.versioning.embedding.sssom.annot_class" />
+    attributes:
+      added_in:
+        range: sssom_version_enum
+
+slots:
+  predicate_type: <co xml:id="example.versioning.embedding.sssom.new_slot" />
+    instantiates:
+      - sssom:Versionable <co xml:id="example.versioning.embedding.sssom.instantiates" />
+    annotations:
+      added_in: "1.1" <co xml:id="example.versioning.embedding.sssom.added_in" />
+        </programlisting>
+        <calloutlist>
+
+          <callout arearefs="example.versioning.embedding.sssom.enum">
+
+            <para>This is an enumeration that lists the available versions of
+            the SSSOM schema. This is used to constrain the value of the
+            custom annotation <property>added_in</property>.</para>
+
+          </callout>
+
+          <callout arearefs="example.versioning.embedding.sssom.annot_class">
+
+            <para>This is what LinkML calls a <link
+            xl:href="https://linkml.io/linkml/schemas/annotations.html#annotation-validation">“meta-model
+            extension”</link>. It defines the structure of the custom
+            annotations we want to add to some schema elements. Here, the
+            extension defines a single annotation called
+            <property>added_in</property>, whose value should be one of the
+            permissible values of the
+            <classname>sssom_version_enum</classname> enumeration.</para>
+
+          </callout>
+
+          <callout arearefs="example.versioning.embedding.sssom.new_slot">
+
+            <para>This is an example of a slot that was added in version 1.1
+            of the SSSOM schema.<footnote><para>The SSSOM schema, while it is
+            being used as an example here, does not follow all the
+            recommendations from this document (which did not exist when the
+            schema was first designed). For example, it abundantly uses slots
+            rather than attributes, contrary to the recommendation in <xref
+            linkend="sect.classes.attributes-over-slots" xrefstyle="select:
+            label" />.</para></footnote></para>
+
+          </callout>
+
+          <callout arearefs="example.versioning.embedding.sssom.instantiates">
+
+            <para>This indicates that the element being defined (the
+            <property>predicate_type</property> slot) is making use of the
+            <classname>Versionable</classname> meta-model extension – that is,
+            it is annotated using the attributes defined in that extension.
+            Note that, contrary to almost all other situations in LinkML where
+            a class is referenced, a meta-model extension is referenced by its
+            URI, <emphasis>not</emphasis> by its name, hence the
+            <literal>sssom:Versionable</literal>.</para>
+
+          </callout>
+
+          <callout arearefs="example.versioning.embedding.sssom.added_in">
+
+            <para>This is the actual annotation that indicates that this slot
+            is an addition from version 1.1 of the schema.</para>
+
+          </callout>
+
+        </calloutlist>
+
+      </example>
+
+      <para>The <property>added_in</property> annotations are completely
+      ignored by LinkML tools, for which they have no particular meaning. But
+      they can be used by any custom tool that is aware of them. For example,
+      both the Java and the Python implementations of the SSSOM specification
+      are using them to automatically determine the lowest version of the
+      specification a SSSOM mapping set is compliant with (by checking in
+      which versions all the slots using by the mapping set were added), or to
+      force a set to be compliant with a given version (by removing all slots
+      that were added in a later version).</para>
+
+      <para>It would also be fairly easy to use those annotations to remove
+      from the schema all the elements that were added from version, say, 1.2
+      onwards, and therefore to obtain a schema that is in effect identical to
+      version 1.1 of the schema (containing all the elements from version 1.0
+      and the additions from version 1.1, but nothing from the more recent
+      versions).<footnote><para>LinkML subsets could also potentially be used
+      for a similar purpose. But the author of this document believes
+      structured annotations are more flexible.</para></footnote></para>
+
+      <note>
+
+        <para>This example illustrates the usefulness of LinkML’s annotation
+        system in general, beyond the use case for versioning. As a general
+        rule, we recommend using custom structured annotations whenever you
+        wish to express a specificity of your schema for which LinkML has no
+        builtin metaslot (rather than, say, merely describe the specificity in
+        plain text in the description of an element). Even if LinkML tools
+        will not use them, they can still be exploited by a small custom layer
+        on top of LinkML.</para>
+
+        <para>Such custom annotations can also potentially act as a “testbed”
+        for testing putative future metaslots “in the wild” before proposing
+        them for addition to LinkML, if they are deemed to be of a general
+        interest and not too specific to a particular schema.</para>
+
+      </note>
+
+    </section>
+
   </section>
 
   <section xml:id="sect.naming">
