@@ -1706,6 +1706,161 @@ classes:
 
     </section>
 
+    <section xml:id="sect.classes.components">
+      <title>Prefer a list of type-designated components over named
+      attributes</title>
+
+      <para>A single multi-valued attribute with a range set to a
+      type-designated class can conveniently replace a series of
+      attributes.</para>
+
+      <para>To illustrate, let us suppose you are modelling a computer and its
+      hardware peripheral devices (e.g. keyboard, mouse, webcam, monitor,
+      printer…). Each device, as well as the computer itself, is represented
+      by a distinct class. To model the relations between the computer and the
+      various devices, one possibility would be for the class representing the
+      computer to have one attribute for each different type of peripheral
+      devices, as in the following example:</para>
+
+      <example xml:id="example.classes.components.named-attrs">
+        <title>Peripherals as separate, specific attributes</title>
+        <programlisting>
+classes:
+  Computer:
+    attributes:
+      keyboard:
+        range: Keyboard
+      mouse:
+        range: Mouse
+      monitors:
+        range: Monitor
+        multivalued: true
+      printer:
+        range: Printer
+
+  Keyboard: <co xml:id="example.classes.components.named-attrs.keyboard-class" />
+  Mouse:
+  Monitor:
+  Printer:
+        </programlisting>
+        <calloutlist>
+
+          <callout arearefs="example.classes.components.named-attrs.keyboard-class">
+
+            <para>We omit the detailed definitions for the classes
+            representing the peripheral devices, they are not relevant for
+            this example.</para>
+
+          </callout>
+
+        </calloutlist>
+      </example>
+
+      <para>This would work fine, but is quite cumbersome as every type of
+      peripheral device needs both its own class <emphasis>and</emphasis> its
+      own attribute on the <classname>Computer</classname> class. This can
+      make the definition of that class quite large (as large as the list of
+      known types of devices). This also means that it is not possible to add
+      a new type of device without changing the
+      <classname>Computer</classname> class.</para>
+
+      <para>We recommend considering an alternative design where the
+      <classname>Computer</classname> class has instead a single attribute
+      holding a list of devices of any type:</para>
+
+      <example xml:id="example.classes.components.td-list">
+        <title>Peripherals as a list of generic devices</title>
+        <programlisting>
+classes:
+  Computer:
+    attributes:
+      devices: <co xml:id="example.classes.components.td-list.list" />
+        range: PeripheralDevice
+        multivalued: true
+
+  PeripheralDevice: <co xml:id="example.classes.components.td-list.parent-class" />
+    attributes:
+      type: <co xml:id="example.classes.components.td-list.td-attr" />
+        designates_type: true
+        type: string <co xml:id="example.classes.components.td-list.td-type" />
+
+  Keyboard:
+    is_a: PeripheralDevice <co xml:id="example.classes.components.td-list.keyboard" />
+
+  Mouse:
+    is_a: PeripheralDevice
+
+  Monitor:
+    is_a: PeripheralDevice
+
+  Printer:
+    is_a: PeripheralDevice
+        </programlisting>
+        <calloutlist>
+
+          <callout arearefs="example.classes.components.td-list.parent-class">
+
+            <para>This will store all the devices attached to this computer,
+            regardless of their exact type.</para>
+
+          </callout>
+
+          <callout arearefs="example.classes.components.td-list.parent-class">
+
+            <para>This is the parent class for all types of peripheral
+            devices.</para>
+
+          </callout>
+
+          <callout arearefs="example.classes.components.td-list.td-attr">
+
+            <para>This is the <emphasis>type designator</emphasis> for the
+            <classname>PeripheralDevice</classname> class.  We need it to know
+            the exact type of each device in the <property>devices</property>
+            list.</para>
+
+          </callout>
+
+          <callout arearefs="example.classes.components.td-list.td-type">
+
+            <para>The type designator could also be a URI and/or a CURIE – and
+            in fact later in this document we will recommend that type
+            designators should be URI/CURIE-typed, but this is out of scope
+            for this example.</para>
+
+          </callout>
+
+          <callout arearefs="example.classes.components.td-list.keyboard">
+
+            <para>All classes representing peripheral devices are subclasses
+            of <classname>PeripheralDevice</classname>, allowing them to be
+            used in the <classname>PeripheralDevice</classname>-typed
+            <property>devices</property> list.</para>
+
+          </callout>
+
+        </calloutlist>
+      </example>
+
+      <para>Compared to the previous example, in this design the
+      <classname>Computer</classname> is kept much simpler, and it will not
+      need to be updated whenever a new type of peripheral will be added to
+      the model – adding a new subclass of
+      <classname>PeripheralDevice</classname> is all it would take to make the
+      new type usable in the <property>devices</property> list.</para>
+
+      <note>
+
+        <para>The disdvantage of this design is that it does not allow to
+        express peripheral-specific constraints, such as “there must be at
+        least one keyboard” or “there cannot be more than three monitors”.
+        This does not negate its benefits in terms of simplicity and
+        extensibility, but may require careful consideration.</para>
+
+      </note>
+
+    </section>
+
   </section>
 
   <section xml:id="sect.enums">
