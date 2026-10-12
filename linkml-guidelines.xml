@@ -1381,7 +1381,7 @@ enums:
       are class-specific slots, or if we prefer the other way round, slots are
       schema-wide attributes. That difference aside, slots and attributes are
       equivalent.<footnote><para>At least in theory. In practice, bugs in
-      LinkML-Py may mean that some slot-related feature won’t necessarily
+      LinkML-Py may mean that some slot-related features won’t necessarily
       always work when they are applied to
       attributes.</para></footnote></para>
 
@@ -1605,10 +1605,10 @@ classes:
         should have the following three attributes: <property>name</property>,
         <property>identifier</property>, and
         <property>identifier_type</property>. The classes where those
-        attributes are not related – they don’t share a single parent class in
-        which you could define the attributes once and for all and have them
-        inherited by all the classes. At first sight, this leaves you with two
-        options:</para>
+        attributes are needed are not related – they don’t share a single
+        parent class in which you could define the attributes once and for all
+        and have them inherited by all the classes. At first sight, this
+        leaves you with two options:</para>
 
         <itemizedlist>
 
@@ -1644,7 +1644,7 @@ classes:
           <title>Using a mixin to group shared attributes</title>
           <programlisting>
 classes:
-  IsIdentifiableMixin:
+  IsIdentifiableEntityMixin:
     description: An entity that can be identified by a name or an identifier.
     mixin: true
     attributes:
@@ -1661,12 +1661,12 @@ classes:
   ResearchInstrument:
     description: Any kind of research hardware (e.g. microscope, centrifuge, etc.).
     mixins:
-      - IsIdentifiableEntity
+      - IsIdentifiableEntityMixin
 
   InstrumentManufacturer:
     description: A company (or other organisation) that makes research instruments.
     mixins:
-      - IsIdentifiableEntity
+      - IsIdentifiableEntityMixin
           </programlisting>
           <calloutlist>
             <callout arearefs="example.classes.attributes-over-slots.mixins.identifier_type">
@@ -1696,9 +1696,10 @@ classes:
           <property>identifier</property> and
           <property>identifier_type</property> are applicable. But with the
           attributes defined in the
-          <classname>IsIdentifiableMixin</classname>, the rule can be defined
-          in that mixin instead – classes that inherit the mixin will get both
-          the attributes <emphasis>and</emphasis> the associated rules!</para>
+          <classname>IsIdentifiableEntityMixin</classname>, the rule can be
+          defined in that mixin instead – classes that inherit the mixin will
+          get both the attributes <emphasis>and</emphasis> the associated
+          rules!</para>
 
         </note>
 
