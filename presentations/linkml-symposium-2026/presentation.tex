@@ -49,6 +49,394 @@
 
 % Contents
 
+\section{Context}
+
+\begin{frame}
+  \frametitle{The OME model}
+
+  \begin{block}{Open Microscopy Environment (OME) model}
+    \begin{itemize}
+      \item Foundation for the entire OMERO software stack since the early 2000s
+      \item XML model formally described using XML Schemas
+      \item Last revision in 2016
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Limitations}
+    \begin{itemize}
+      \item XML only
+      \item Monolithic
+      \item Not easily modifiable
+      \item Not extensible
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{The OME-Zarr file format}
+
+  \begin{block}{Imaging file formats}
+    \begin{itemize}
+      \item Dozens of different file formats
+      \item All handled by the Bio-Formats library
+      \item Common OME-TIFF format (standard TIFF image format with
+            embedded OME XML metadata)
+        \begin{itemize}
+          \item Not scalable enough for the size of current imaging
+                datasets (some too big to even fit on the hard disk of a
+                typical desktop computer)
+        \end{itemize}
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{The Next Generation File Format (OME-NGFF)}
+    \begin{itemize}
+      \item ``Cloud-native'' file format
+      \item Based on Zarr (chunked N-dimensional arrays -- ``streaming
+            arrays'')
+      \item OME-Zarr: image pixels in Zarr arrays plus JSON metadata
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{We need a new form for the OME model}
+
+  \begin{block}{Requirements}
+    \begin{itemize}
+      \item Representable in JSON (OME-Zarr's native format for metadata)
+      \item More generally, representable in various formats (not just
+            XML, not just JSON) -- including for example RDF
+      \item More modular than the original OME XML
+        \begin{itemize}
+          \item Make it easier to reuse only the parts you need
+        \end{itemize}
+      \item Extensible
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Can LinkML help?}
+    I.e., can LinkML be for ``OME-JSON 2027'' what XML Schemas has been
+    for OME-XML since the early 2000s?
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Layered approach}
+
+  \begin{block}{Base modules}
+    One module for each ``logical'' section of the current OME model
+    (e.g. ``Instrument'', ``Experiment'', ``Image'', ``Annotations'',
+    etc.)
+  \end{block}
+
+  \begin{block}{Community-defined modules}
+    Extend base modules to accomodate richer metadata needed by a
+    particular community
+    \begin{itemize}
+      \item e.g. ``QUAREP-LiMi'' module for acquisition metadata
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Individual extensions}
+    Extend a base or community-defined module to fit particular use
+    cases (e.g. vendor-specific metadata)
+  \end{block}
+
+\end{frame}
+
+
+\section{On reusability}
+
+\begin{frame}
+  \frametitle{Reusing a model vs reusing a schema}
+
+  \begin{block}{Reusing a model}
+    Writing a new schema $B$ that (among other things) defines the same
+    structures as original schema $A$, so that $B$ can accept data
+    defined by $A$.
+
+    $\sim$ ``Reuse by copy/pasting''
+  \end{block}
+
+  \begin{block}{Reusing a schema}
+    Writing a new schema $B$ that \emph{imports} original schema $A$ and
+    uses some of its elements (e.g. uses a class from $A$ in a
+    \emph{range} or \emph{is\_a} declaration).
+  \end{block}
+
+  \begin{block}{}
+    Reusing \emph{models} is better than nothing, but we focus on
+    reusing \emph{schemas}.
+  \end{block}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{On the importance of a naming convention}
+
+  \begin{block}{LinkML has no concept of namespaces}
+    \begin{itemize}
+      \item All schema elements have a (namespaced) \emph{URI}...
+      \item But the URIs do \emph{not} identify the elements!
+      \item Elements are only identified by their (unqualified) \emph{name}
+      \item All schema elements throughout the imports closure live in a
+            single, flat namespace!
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Name clash := loss of interoperability}
+    Two elements with the same name in two schemas from the same imports
+    closure:
+    \begin{itemize}
+      \item Fatal error, or
+      \item One element silently overrides the other
+    \end{itemize}
+
+    (depending on which LinkML developer you ask)
+  \end{block}
+
+  \begin{block}{}
+    Overly simple, short, and generic element names are the single most
+    important hurdle to schema reusability!
+  \end{block}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Favour attributes over slots}
+
+  \begin{block}{The problem with slots}
+    \begin{itemize}
+      \item Slots needlessly pollute the global namespace
+      \item Using a naming convention to circumvent the issue is not as
+            easy as it is for classes/enums because slot names are directly
+            present in instance data (slot name := JSON dictionary key name) --
+            changing the slot name $\rightarrow$ changing the JSON representation
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Use attributes whenever possible}
+    \begin{itemize}
+      \item Attribute names are scoped to their defining class
+      \item If several classes need the very same attributes, then:
+        \begin{itemize}
+          \item define the attributes in a base class, or
+          \item define the attributes in a common \emph{mixin} (if the
+                classes are not related and it would not be appropriate
+                to make them inherit from the same base class)
+        \end{itemize}
+    \end{itemize}
+  \end{block}
+
+\end{frame}
+
+\section{On extensibility}
+
+\begin{frame}
+  \frametitle{Extensibility vs flexibility}
+
+  How to allow using a schema to do things the authors of the schema did
+  not imagine (e.g. store data they did not anticipate)?
+
+  \begin{block}{Flexible schema}
+    A schema that defines (among other things) data structures
+    specifically intended to hold unknown arbitrary data (e.g. SSSOM's
+    \texttt{other} slot or OME-XML's \texttt{Annotation} elements).
+  \end{block}
+
+  \begin{block}{Extensible schema}
+    A schema $S_1$ from which one can create an extended schema $S_2$ to
+    accomodate an unforeseen use case, while preserving at least
+    \emph{some} compatibility with the original schema $S_1$.
+  \end{block}
+
+  \begin{block}{}
+    Flexibility and extensibibility are not mutually exclusive, but we
+    focus primarily on extensibility
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Extensibility and compatibility}
+
+  Assuming
+  \begin{itemize}
+    \item $S_1$ and $S_2$ two schemas with $S_2$ extending $S_1$
+    \item $I_1$ a piece of instance data valid against $S_1$
+    \item $I_2$ a piece of instance data valid against $S_2$
+  \end{itemize}
+
+  \medskip
+  Which schema accepts which data?
+  \begin{tabular}{|c|c|c|}
+    \hline
+          & $S_1$         & $S_2$\\
+    \hline
+    $I_1$ & by definition & if $S_2$ is \emph{backward-compatible} with $S_1$\\
+    \hline
+    $I_2$ & if $S_1$ is \emph{forward-compatible} with $S_2$ & by definition\\
+    \hline
+  \end{tabular}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Ensuring backward-compatibility}
+
+  \begin{block}{$S_2$ must be a strict superset of $S_1$}
+    \begin{itemize}
+      \item Can
+        \begin{itemize}
+          \item Add new classes, attributes, enums / PVs
+          \item Loosen constraints
+        \end{itemize}
+      \item Cannot
+        \begin{itemize}
+          \item Remove or rename anything (classes \emph{may} be renamed
+                but beware of type designators!)
+          \item Tighten constraints
+        \end{itemize}
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Practically}
+    \begin{itemize}
+      \item Reasonably easy to achieve if you are \emph{reusing the schema}
+            that is extended (i.e. \emph{importing}) rather than the
+            \emph{reusing the model}
+      \item But redefinitions still allow you to do wrong things!
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Ensuring forward-compatibility}
+
+  Forward-compatibility is a property of the \emph{original schema} and,
+  if desired, must be planned for from the very beginning.
+
+  \begin{itemize}
+    \item Use \texttt{extra\_slots.allowed} on classes that you wish to
+          be extensible
+    \item Allow the use of unknown type designators
+      \begin{itemize}
+        \item Not possible yet, feature has been requested
+      \end{itemize}
+    \item Allow the use of unknown PVs
+      \begin{itemize}
+        \item Not possible yet, feature has been requested
+      \end{itemize}
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Compatibility across independent extended schemas}
+
+  Assuming
+  \begin{itemize}
+    \item A schema $S_1$ used by an application $A_1$
+    \item A schema $S_2$ that extends $S_1$, used by an application $A_2$
+    \item Another schema $S_3$ that extends $S_1$, used by an application $A_3$
+  \end{itemize}
+
+  \medskip
+  The aim is that any of the three applications can read a file produced
+  by any of the other applications while preserving the data
+  specific to the other applications.
+
+  \medskip
+  \begin{itemize}
+    \item $S_1$ (and by extension, $S_2$ and $S_3$) must be designed to be
+          forward-compatible
+    \item $S_2$ and $S_3$ must be designed to be backward-compatible
+    \item Name conflicts between $S_2$ and $S_3$ (independently
+          developed) must be avoided!
+  \end{itemize}
+\end{frame}
+
+
+\section{Generic guidelines}
+
+\begin{frame}
+  \frametitle{Use LinkML early on}
+
+  \begin{itemize}
+    \item ``Retrofitting'' a LinkML schema to describe a pre-existing
+          JSON is not always easy and may even not be possible (at least
+          in a ``elegant'' manner that makes good use of LinkML idioms)
+    \item For example, with Serde's ``enum serialisation forms'':
+      \begin{itemize}
+        \item ``Internally tagged enums'' have a perfect match a LinkML
+        \item ``Adjacently tagged enums'' \emph{can} be modelled but
+              only in an awkward manner
+        \item ``Externally tagged enums'' \emph{cannot} be modelled in
+              LinkML
+      \end{itemize}
+    \item Whenever possible, use LinkML from the start and let the
+          LinkML schema dictate the JSON serialisation, rather than the
+          other way round
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Let LinkML do the heavy lifting}
+
+  \begin{itemize}
+    \item LinkML has several builtin features that can make your life
+          easier (if only you knew about them)
+    \item Needs an attribute that should contain a reference to an
+          instance of another class somehwere else in the document?
+      \begin{itemize}
+        \item Just give the class-to-be-referenced an \emph{identifier
+              attribute}
+        \item Any attribute (anywhere) whose range is set to that class
+              is then automatically expected to contain a reference
+              (unless \texttt{inlined: false})
+      \end{itemize}
+    \item Meeds variable attributes depending on the value of a single
+          attribute?
+      \begin{itemize}
+        \item Use a \emph{type-designated} class hierarchy
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Favour type-designated lists over named attributes}
+
+  A single multi-valued attribute with a range set to a type-designated
+  class can conveniently replace a series of attributes.
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Avoid LinkML's dark corners}
+
+  Several aspects of LinkML are dramatically underspecified. Some of
+  them are already handled differently by different implementations
+  (even different parts of a same implementation, e.g. \emph{SchemaView}
+  vs \emph{SchemaLoader} in LinkML-Py).
+
+  \medskip
+  Until/unless the specification is improved (and the implementations
+  amended to follow), avoid relying on underspecified features.
+
+  \medskip
+  Examples:
+  \begin{itemize}
+    \item Enum inheritance
+    \item Enum's \texttt{code\_set} and associated slots
+    \item Enum's \texttt{include}, \texttt{minus}
+    \item Overriding of definitions across several schemas in the same
+          imports closure
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Use imports to allow for a customization layer}
+
+\end{frame}
 
 
 % Backmatter
