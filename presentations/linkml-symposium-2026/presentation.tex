@@ -8,6 +8,7 @@
 \usepackage{polyglossia}
 \usepackage{tikz}
 \usepackage{fancyvrb}
+\usepackage{listings}
 
 \setmainlanguage{english}
 \usetheme{Boadilla}
@@ -36,6 +37,9 @@
   pdftitle={LinkML for imaging metadata},
   pdfauthor={Damien Goutte-Gattat}}
 
+\newsavebox{\examplea}
+\newsavebox{\exampleb}
+
 \begin{document}
 
 % Frontmatter
@@ -49,6 +53,704 @@
 
 % Contents
 
+\section{Context}
+
+\begin{frame}
+  \frametitle{The OME model and its limitations}
+
+  \begin{block}{Open Microscopy Environment (OME) model}
+    \begin{itemize}
+      \item Foundation for the entire OMERO software stack since the early 2000s
+      \item XML model formally described using XML Schemas
+      \item Last revision in 2016
+      \item Limitations
+        \begin{itemize}
+          \item \textcolor<2>{red}{XML only}
+          \item \textcolor<3>{red}{Monolithic}
+          \item \textcolor<4>{red}{Outdated}
+          \item \textcolor<5>{red}{Not easily modifiable nor extensible}
+        \end{itemize}
+    \end{itemize}
+  \end{block}
+
+  \begin{overlayarea}{\textwidth}{2cm}
+    \only<2|handout:0>{
+      \begin{itemize}
+        \item Cannot easily be bridged from the non-XML world
+      \end{itemize}
+    }
+    \only<3|handout:0>{
+      \begin{itemize}
+        \item A single schema defining everything needed for OMERO\\
+              (from user accounts to image ROIs)
+        \item Cannot be used piecewise
+      \end{itemize}
+    }
+    \only<4|handout:0>{
+      \begin{itemize}
+        \item Hardcoded limit to 5 dimensions (X, Y, Z, C, T)
+        \item Image acquisition metadata not nearly as rich as we would
+              now like
+      \end{itemize}
+    }
+    \only<5|handout:0>{
+      \begin{itemize}
+        \item Can only be extended by creating an incompatible schema
+        \item E.g. QUAREP-LiMi ``extension'' for richer acquisition
+              metadata\\
+              (\emph{de facto} a new schema which is is turn monolithic
+               and non-extensible)
+      \end{itemize}
+    }
+  \end{overlayarea}
+\end{frame}
+
+\begin{frame}
+  \frametitle{The OME-Zarr file format}
+
+  \begin{block}{The problems with imaging file formats}
+    \begin{itemize}
+      \item More than 140 different formats
+      \item Current solution: the OME-TIFF format
+        \begin{itemize}
+          \item \textcolor<2>{red}{Standard TIFF image format} $+$
+                \textcolor<3>{red}{embedded OME-XML metadata}
+          \item Used as the \emph{lingua franca} (all images are parsed
+                into OME-TIFFs)
+        \end{itemize}
+      \item Limitations
+        \begin{itemize}
+          \item \textcolor<2,5>{red}{Not scalable enough} for the size of current imaging
+                datasets (TB/PB scale)
+          \item Limitations inherited from the \textcolor<3,6>{red}{OME model}
+        \end{itemize}
+    \end{itemize}
+  \end{block}
+
+  \visible<4,5,6>{
+  \begin{block}{The Next Generation File Format (OME-NGFF, aka ``OME-Zarr'')}
+      \begin{itemize}
+        \item ``Cloud-native'' file format
+        \item Based on Zarr (chunked N-dimensional arrays -- ``streaming
+              arrays'')
+        \item OME-Zarr := \textcolor<5>{red}{image pixels in Zarr arrays} $+$
+              \textcolor<6>{red}{metadata in JSON}
+      \end{itemize}
+    \end{block}
+  }
+\end{frame}
+
+\begin{frame}
+  \frametitle{We need a new form for the OME model}
+
+  \begin{block}{Requirements}
+    \begin{itemize}
+      \item \textcolor<2,6>{red}{Representable in JSON}
+      \item More generally, representable in \textcolor<3,6>{red}{various formats}
+      \item \textcolor<4,7>{red}{Modular and reusable}
+      \item \textcolor<5,7>{red}{Extensible}
+    \end{itemize}
+  \end{block}
+
+  \begin{overlayarea}{\textwidth}{2cm}
+    \only<2|handout:0>{
+      \begin{itemize}
+        \item As Zarr's native format for metadata
+      \end{itemize}
+    }
+    \only<3|handout:0>{
+      \begin{itemize}
+        \item Not just XML, not just JSON
+        \item Ideally avoid any strict ties to one particular format\\
+              (the OME model's original mistake)
+        \item Direct support for RDF
+      \end{itemize}
+    }
+    \only<4|handout:0>{
+      \begin{itemize}
+        \item Make it easier to reuse only the parts you need
+      \end{itemize}
+    }
+    \only<5|handout:0>{
+      \begin{itemize}
+        \item Allow community and third-party extensions
+        \textcolor{red}{while preserving interoperability}
+      \end{itemize}
+    }
+    \only<6,7|handout:1>{
+      \begin{block}{Is LinkML the solution?}
+        \begin{itemize}
+          \item LinkML is an obvious choice for its
+                \textcolor<6>{red}{independance to serialization formats}
+          \item Modularity, reusability and extensibility are
+                \textcolor<7>{red}{not} automatic benefits of LinkML\\
+                ---~They're achievable, but you have to work for it
+        \end{itemize}
+      \end{block}
+    }
+  \end{overlayarea}
+\end{frame}
+
+\section{Constraints}
+
+\begin{frame}
+  \frametitle{Reusability}
+
+  \begin{block}{A reusable schema}
+    \begin{itemize}
+      \item Is a schema that can be used in
+            \textcolor<2>{red}{unforeseen contexts}
+      \item Must be distinguished from a \textcolor<3>{red}{reusable model}
+      \item Requires \textcolor<4>{red}{specific, careful considerations}
+    \end{itemize}
+  \end{block}
+
+  \begin{overlayarea}{\textwidth}{2.5cm}
+    \only<2|handout:0>{
+      \begin{itemize}
+        \item E.g. in an application that has a completely different focus
+              than what was expected by the schema's authors
+        \item Possibly as part of a \textcolor{red}{larger schema}
+      \end{itemize}
+    }
+    \only<3|handout:0>{
+      \begin{itemize}
+        \item Terminology note: a \textcolor{red}{schema} is a formal
+              representation of \textcolor{red}{model}\\
+              (in a schema definition language such as LinkML)
+        \item ``Schema $B$ reuses the model of schema $A$``
+              := schema $B$ defines the same structures as schema $A$
+        \item ``Schema $B$ reuses schema $A$``
+              := schema $B$ \textcolor{red}{imports} schema $A$
+      \end{itemize}
+      \smallskip
+      Reusing a model is sometimes good enough, but we want to promote
+      the reusability of schemas.
+    }
+    \only<4|handout:0>{
+      \begin{itemize}
+        \item (Compared to a schema only intended for a specific
+              application with no expectation of reusability)
+        \item A non-reusable schema is the \textcolor{red}{default outcome}!
+      \end{itemize}
+    }
+  \end{overlayarea}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Modularity}
+
+  \begin{block}{A modular schema}
+    \begin{itemize}
+      \item Is a (large) schema \textcolor<2>{red}{broken down into separate modules}
+      \item Inherently \textcolor<3>{red}{facilitates reusability} if done correctly
+      \item Also \textcolor<4>{red}{facilitates schema development} and maintenance
+    \end{itemize}
+  \end{block}
+
+  \begin{overlayarea}{\textwidth}{2.5cm}
+    \only<2|handout:0>{
+      \begin{itemize}
+        \item Nothing really LinkML- or even schema-specific here
+        \item But specificities of LinkML's \texttt{imports} have to be
+              taken into account
+      \end{itemize}
+    }
+    \only<3|handout:0>{
+      \begin{itemize}
+        \item Beware of inter-module dependencies
+        \item Worst-case scenario: all modules are interdependent\\
+              (the schema is \emph{de facto} NOT modular!)
+      \end{itemize}
+    }
+    \only<4|handout:0>{
+      \begin{itemize}
+        \item Classical ``divide and conquer'' strategy
+        \item Also allows \textcolor{red}{delegation} to third parties
+        \item Beware that modularity does have a complexity cost
+          \begin{itemize}
+            \item All else being equal, a modular schema is more complex
+                  than a monolithic one
+          \end{itemize}
+      \end{itemize}
+    }
+  \end{overlayarea}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Extensibility}
+
+  \begin{block}{An extensible schema $S_1$}
+    \begin{itemize}
+      \item Can be extended into a schema $S_2$ to
+            \textcolor<2>{red}{accomodate unforeseen use cases}
+      \item While preserving at least \textcolor<3>{red}{some compatibility}
+            with the original schema
+    \end{itemize}
+  \end{block}
+
+  \begin{overlayarea}{\textwidth}{2.5cm}
+    \only<2|handout:0>{
+      \begin{itemize}
+        \item Not to be confused with a \textcolor{red}{flexible schema}
+          \begin{itemize}
+            \item E.g. a schema with some data structures generic enough
+                  that the schema can be used as it is (without any
+                  extension) to store unforeseen data
+          \end{itemize}
+      \end{itemize}
+    }
+    \only<3,4,5|handout:1>{
+      Assuming
+      \begin{itemize}
+        \item $I_1$ a piece of instance data valid against $S_1$
+        \item $I_2$ a piece of instance data valid against $S_2$
+      \end{itemize}
+
+      \medskip
+      Which schema accepts which data?
+      \begin{tabular}{|c|c|c|}
+        \hline
+              & $S_1$         & $S_2$\\
+        \hline
+        $I_1$ & by definition & if $S_2$ is \textcolor<4,5>{red}{backward-compatible} with $S_1$\\
+        \hline
+        $I_2$ & if $S_1$ is \textcolor<5>{red}{forward-compatible} with $S_2$ & by definition\\
+        \hline
+      \end{tabular}
+
+      \medskip
+      We want minimally \textcolor<4,5>{red}{backward compatibility}, and
+      ideally \textcolor<5>{red}{forward compatibility}.
+    }
+  \end{overlayarea}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Layered modular approach}
+
+  \uncover<1,4>{
+    \begin{block}{Layer 1: Base modules}
+      One module for each ``logical'' section of the current OME model
+    \end{block}
+  }
+
+  \uncover<2,4>{
+    \begin{block}{Layer 2: Community-defined modules}
+      Extend base modules to accomodate richer metadata for
+      particular communities
+    \end{block}
+  }
+
+  \uncover<3,4>{
+    \begin{block}{Layer 3: Individual extensions}
+      Extend base or community-defined modules to fit particular use
+      cases
+    \end{block}
+  }
+
+  \begin{overlayarea}{\textwidth}{1.5cm}
+    \only<1|handout:0>{
+      E.g.
+      \begin{itemize}
+        \item ``Image'': physical description of an image (e.g.
+              dimensions, pixel sizes, etc.)
+        \item ``Instrument'': description of microscopy hardware
+        \item ``Experiment'': description of experimental setups
+      \end{itemize}
+    }
+    \only<2|handout:0>{
+      E.g.
+      \begin{itemize}
+        \item ``QUAREP-LiMi'' extension to the ``Instrument''  module\\
+              (richer description of light microscopy hardware)
+        \item ``KESEYA'' extension to the ``Instrument'' module\\
+              (richer description of volumetric EM hardware)
+      \end{itemize}
+    }
+    \only<3|handout:0>{
+      E.g.
+      \begin{itemize}
+        \item Vendor-specific metadata
+      \end{itemize}
+    }
+    \only<4|handout:1>{
+      Compatibility considerations:
+      \begin{itemize}
+        \item An application built on a community-defined module can use
+              data compliant with base modules
+              (\textcolor{red}{backward compatibility})
+        \item An application built on base modules only can use data
+              compliant with a community module or an individual
+              extension (\textcolor{red}{forward compatibility})
+      \end{itemize}
+    }
+  \end{overlayarea}
+\end{frame}
+
+\section{Guidelines for LinkML schema authors}
+
+\begin{frame}
+  \frametitle{Rationale}
+
+  \begin{block}{}
+    The aims of reusability, modularity, and extensibility cannot
+    possibly be achieved if the authors of the base modules,
+    community-defined modules, and third-party extensions are left to
+    their own devices and free to write LinkML schemas in any way they
+    want.
+  \end{block}
+
+  \begin{itemize}
+    \item We need guidelines to steer schema authors in the right
+          direction
+    \item \url{https://github.com/gouttegd/linkml-guidelines} (source)\\
+          \url{https://github.com/gouttegd/linkml-guidelines/releases/download/v20261012/linkml-guidelines.pdf}
+          (pre-rendered PDF)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Use LinkML early on}
+
+  \begin{block}{}
+    \begin{itemize}
+      \item ``Retrofitting'' a LinkML schema to describe a pre-existing
+            JSON
+        \begin{itemize}
+          \item is \textcolor<2>{red}{not always easy}
+          \item may even \textcolor<2>{red}{not be possible}\\
+                (at least in a ``elegant'' manner that makes good use of
+                LinkML idioms)
+        \end{itemize}
+      \item Better to \textcolor<3>{red}{let the LinkML schema dictate
+            the JSON serialisation}
+    \end{itemize}
+  \end{block}
+
+  \begin{overlayarea}{\textwidth}{2cm}
+    \only<2|handout:0>{
+      For example, if you have a pre-existing JSON structure defined
+      using (Rust's) Serde's ``enum serialisation forms''
+      \begin{itemize}
+        \item ``Internally tagged enums'' have a perfect match in LinkML
+        \item ``Adjacently tagged enums'' \emph{can} be modelled but
+              only in an awkward manner
+        \item ``Externally tagged enums'' \emph{cannot} be modelled in
+              LinkML
+      \end{itemize}
+    }
+    \only<3|handout:0>{
+      Whenever possible:
+      \begin{itemize}
+        \item Use LinkML from the start
+        \item Focus on the abstract model over the JSON serialisation
+      \end{itemize}
+    }
+  \end{overlayarea}
+\end{frame}
+
+\begin{lrbox}{\examplea}
+\begin{lstlisting}[basicstyle=\scriptsize]
+classes:
+  Bar:
+    is_a: FooMixin
+\end{lstlisting}
+\end{lrbox}
+
+\begin{frame}
+  \frametitle{Follow a strict naming convention}
+
+  \begin{block}{A naming convention is not merely cosmetic}
+    \begin{itemize}
+      \item It helps \textcolor<2>{red}{catching errors}
+      \item It is critical to avoid \textcolor<3>{red}{name conflicts}
+            across schemas (reusability issue)
+    \end{itemize}
+  \end{block}
+
+  \begin{overlayarea}{\textwidth}{3.5cm}
+    \only<2|handout:0>{
+      E.g., assuming a convention that a \emph{Foo} mixin shall be named
+      \texttt{FooMixin}, the following statement is certain to be wrong
+      without even looking at the rest of the schema:
+
+      \medskip
+      \usebox{\examplea}
+
+      \medskip
+      (The LinkML validator currently does \emph{not} catch this kind of
+      mixin misuse.)
+    }
+    \only<3|handout:0>{
+      \begin{itemize}
+        \item LinkML has no concept of namespaces
+          \begin{itemize}
+            \item Schema elements are only identified by their
+                  \textcolor{red}{names}, not by their URIs
+            \item All schema elements in the imports closure
+                  live in a single, flat namespace
+          \end{itemize}
+        \item Two elements with the same name in the same imports closure:
+          \begin{itemize}
+            \item Fatal error \textcolor{red}{or} one element silently
+                  overrides the other\\
+                  (depending on which LinkML implementation you use)
+            \item Either way, reusability is affected
+          \end{itemize}
+      \end{itemize}
+
+      \medskip
+      Overly simple, short, and generic element names are the single
+      most important hurdle to schema reusability!
+    }
+  \end{overlayarea}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Favour attributes over slots}
+
+  \begin{block}{Global slots are best avoided}
+    \begin{itemize}
+      \item Slots needlessly \textcolor<2>{red}{pollute the global
+            namespace}
+      \item Use class-local \textcolor<3>{red}{attributes} whenever
+            possible
+    \end{itemize}
+  \end{block}
+
+  \begin{overlayarea}{\textwidth}{3.5cm}
+    \only<2|handout:0>{
+      \begin{itemize}
+        \item A schema full of slots with names like \texttt{name},
+              \texttt{id}, \texttt{type}... (all commonly seen in
+              schemas in the wild) is virtually guaranteed
+              \textcolor{red}{not to be reusable} in an unforeseen context
+        \item A naming convention for slot names is not as appropriate
+              as it is for class/enum names because \textcolor{red}{slot
+              names are directly present in instance data} (slot name :=
+              JSON dictionary key name)
+      \end{itemize}
+    }
+    \only<3|handout:0>{
+      \begin{itemize}
+        \item Attribute names are scoped to their defining class\\
+              (removing any possibility of conflicting names across
+              schemas)
+        \item If several classes need the very same attributes, then:
+          \begin{itemize}
+            \item define the attributes in a base class, or
+            \item define the attributes in a common mixin class\\
+                  (if the classes are not related and it would not be
+                  appropriate to make them inherit from the same base
+                  class)
+          \end{itemize}
+      \end{itemize}
+    }
+  \end{overlayarea}
+\end{frame}
+
+\begin{lrbox}{\examplea}
+\begin{lstlisting}[basicstyle=\scriptsize]
+classes:
+  OMEMicroscope:
+    attributes:
+      objective:
+        range: OMEObjective
+      light_source:
+        range: OMELightSource
+      dectector:
+        range: OMEDetector
+
+  OMEObjective:
+    ...
+
+  OMELightSource:
+    ...
+\end{lstlisting}
+\end{lrbox}
+
+\begin{lrbox}{\exampleb}
+\begin{lstlisting}[basicstyle=\scriptsize]
+classes:
+  OMEMicroscope:
+    attributes:
+      components:
+        range: OMEMicroscopeComponent
+        multivalued: true
+
+  OMEMicroscopeComponent:
+    attributes:
+      type:
+        designates_types: true
+
+  OMEObjective:
+    is_a: OMEMicroscopeComponent
+    ...
+\end{lstlisting}
+\end{lrbox}
+
+\begin{frame}
+  \frametitle{Favour type-designated lists over named attributes}
+
+  \begin{block}{}
+    A single \textcolor<3>{red}{multi-valued attribute} with a range set
+    to a \textcolor<3>{red}{type-designated class} can conveniently
+    replace a \textcolor<2>{red}{series of attributes}.
+  \end{block}
+
+  \begin{overlayarea}{\textwidth}{3.5cm}
+    \only<2|handout:0>{
+      \begin{columns}
+        \begin{column}{.4\textwidth}
+          \usebox{\examplea}
+        \end{column}
+        \begin{column}{.55\textwidth}
+          \begin{itemize}
+            \item One attribute for each type of microscope component
+            \item Adding a new type of component requires both
+              \begin{itemize}
+                \item adding a new class for the component itself
+                \item adding a new attribute to \emph{OMEMicroscope}
+              \end{itemize}
+          \end{itemize}
+        \end{column}
+      \end{columns}
+    }
+    \only<3|handout:0>{
+      \begin{columns}
+        \begin{column}{.4\textwidth}
+          \usebox{\exampleb}
+        \end{column}
+        \begin{column}{.55\textwidth}
+          \begin{itemize}
+            \item One attribute accepting a list of arbitrary components
+            \item Adding a new type of component only requires adding a
+                  new subclass of \emph{OMEMicroscopeComponent}
+              \begin{itemize}
+                \item Easier to maintain and extend
+              \end{itemize}
+            \item Drawback: Does not allow component-specific
+                  constraints
+          \end{itemize}
+        \end{column}
+      \end{columns}
+    }
+  \end{overlayarea}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Use imports to allow for a customization layer}
+
+  (not really a guideline --~yet!~--, just an example)
+
+  \begin{columns}[t]
+    \begin{column}{.3\textwidth}
+\begin{Verbatim}[frame=single,fontsize=\scriptsize]
+id: ome-main
+
+classes:
+  OMEMicroscope:
+    is_a: OMEBase
+
+  OMEMicroscopeComponent:
+    is_a: OMEBase
+\end{Verbatim}
+    \end{column}
+
+    \begin{column}{.3\textwidth}
+\begin{Verbatim}[frame=single,fontsize=\scriptsize]
+id: ome-base
+
+classes:
+  OMEBase:
+\end{Verbatim}
+    \end{column}
+
+
+    \begin{column}{.3\textwidth}
+\begin{Verbatim}[frame=single,fontsize=\scriptsize]
+id: ome
+
+imports:
+  - ome-base
+  - ome-main
+\end{Verbatim}
+    \end{column}
+  \end{columns}
+
+  \begin{itemize}
+    \item Breaks the schema into a \textcolor<2>{red}{main layer},
+          a \textcolor<3>{red}{customization layer},
+          and a \textcolor<4>{red}{surface layer}
+      \begin{itemize}
+        \item \textcolor<2>{red}{ome-main}: Defines most of the model,
+              but  deliberately leave out \emph{OMEBase}
+        \item \textcolor<3>{red}{ome-base}: Define \emph{OMEBase} as an
+              empty shell
+        \item \textcolor<4>{red}{ome}: ``External'' schema, simply
+              imports the other two
+      \end{itemize}
+    \item Allows to reuse \emph{ome-main} as part of a larger schema
+          that provides its own definition of \emph{OMEBase}
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Make the most of LinkML}
+
+  \begin{block}{Make sure to learn what LinkML can (and cannot) do}
+    \begin{itemize}
+      \item Whenever possible, \textcolor<2>{red}{let LinkML do the
+            heavy lifting}
+      \item But avoid its \textcolor<3>{red}{dark corners}
+    \end{itemize}
+  \end{block}
+
+  \begin{overlayarea}{\textwidth}{3.5cm}
+    \only<2|handout:0>{
+      \begin{itemize}
+        \item LinkML has several builtin features that can make your
+              life easier\\
+              (if only you knew about them)
+        \item Common anti-patterns:
+          \begin{itemize}
+            \item Designing your own ``foreign keys'' system where
+                  LinkML's \texttt{identifier: true} and
+                  \texttt{inline: true/false} could do the trick
+            \item Playing with pre/post-conditions to do the job of a
+                  \textcolor{red}{type designator}
+          \end{itemize}
+        \item LinkML may not have a great documentation (for now!) but
+              it does have a great community, so when in doubt: ask!
+      \end{itemize}
+    }
+    \only<3|handout:0>{
+      \begin{itemize}
+        \item Several aspects of LinkML are
+              \textcolor{red}{underspecified}
+              and some of them are already
+              \textcolor{red}{handled differently} by
+              different implementations
+          \begin{itemize}
+            \item Or even different parts of the same implementation,\\
+                  e.g. \emph{SchemaView} vs \emph{SchemaLoader} in
+                  LinkML-Py
+          \end{itemize}
+        \item Until the specification is improved,
+              \textcolor{red}{avoid relying on underspecified features}
+              such as:
+          \begin{itemize}
+            \item Enum inheritance
+            \item Enum's \texttt{code\_set} and associated slots
+            \item Enum's \texttt{include}, \texttt{minus}
+            \item Overriding of definitions across several schemas
+          \end{itemize}
+      \end{itemize}
+    }
+  \end{overlayarea}
+\end{frame}
 
 
 % Backmatter
