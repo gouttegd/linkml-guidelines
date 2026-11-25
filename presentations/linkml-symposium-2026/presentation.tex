@@ -169,12 +169,20 @@
     \only<4|handout:0>{
       \begin{itemize}
         \item Make it easier to reuse only the parts you need
+          \begin{itemize}
+            \item In possibly \textcolor{red}{unforeseen contexts}
+            \item And/or as part of a \textcolor{red}{larger model}
+          \end{itemize}
       \end{itemize}
     }
     \only<5|handout:0>{
       \begin{itemize}
-        \item Allow community and third-party extensions
-        \textcolor{red}{while preserving interoperability}
+        \item Allow community and third-party extensions to cover more
+              use cases
+          \begin{itemize}
+            \item While \textcolor{red}{preserving interoperability}
+                  with the base model
+          \end{itemize}
       \end{itemize}
     }
     \only<6,7|handout:1>{
@@ -187,141 +195,6 @@
                 ---~They're achievable, but you have to work for it
         \end{itemize}
       \end{block}
-    }
-  \end{overlayarea}
-\end{frame}
-
-\section{Constraints}
-
-\begin{frame}
-  \frametitle{Reusability}
-
-  \begin{block}{A reusable schema}
-    \begin{itemize}
-      \item Is a schema that can be used in
-            \textcolor<2>{red}{unforeseen contexts}
-      \item Must be distinguished from a \textcolor<3>{red}{reusable model}
-      \item Requires \textcolor<4>{red}{specific, careful considerations}
-    \end{itemize}
-  \end{block}
-
-  \begin{overlayarea}{\textwidth}{2.5cm}
-    \only<2|handout:0>{
-      \begin{itemize}
-        \item E.g. in an application that has a completely different focus
-              than what was expected by the schema's authors
-        \item Possibly as part of a \textcolor{red}{larger schema}
-      \end{itemize}
-    }
-    \only<3|handout:0>{
-      \begin{itemize}
-        \item Terminology note: a \textcolor{red}{schema} is a formal
-              representation of \textcolor{red}{model}\\
-              (in a schema definition language such as LinkML)
-        \item ``Schema $B$ reuses the model of schema $A$``
-              := schema $B$ defines the same structures as schema $A$
-        \item ``Schema $B$ reuses schema $A$``
-              := schema $B$ \textcolor{red}{imports} schema $A$
-      \end{itemize}
-      \smallskip
-      Reusing a model is sometimes good enough, but we want to promote
-      the reusability of schemas.
-    }
-    \only<4|handout:0>{
-      \begin{itemize}
-        \item (Compared to a schema only intended for a specific
-              application with no expectation of reusability)
-        \item A non-reusable schema is the \textcolor{red}{default outcome}!
-      \end{itemize}
-    }
-  \end{overlayarea}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Modularity}
-
-  \begin{block}{A modular schema}
-    \begin{itemize}
-      \item Is a (large) schema \textcolor<2>{red}{broken down into separate modules}
-      \item Inherently \textcolor<3>{red}{facilitates reusability} if done correctly
-      \item Also \textcolor<4>{red}{facilitates schema development} and maintenance
-    \end{itemize}
-  \end{block}
-
-  \begin{overlayarea}{\textwidth}{2.5cm}
-    \only<2|handout:0>{
-      \begin{itemize}
-        \item Nothing really LinkML- or even schema-specific here
-        \item But specificities of LinkML's \texttt{imports} have to be
-              taken into account
-      \end{itemize}
-    }
-    \only<3|handout:0>{
-      \begin{itemize}
-        \item Beware of inter-module dependencies
-        \item Worst-case scenario: all modules are interdependent\\
-              (the schema is \emph{de facto} NOT modular!)
-      \end{itemize}
-    }
-    \only<4|handout:0>{
-      \begin{itemize}
-        \item Classical ``divide and conquer'' strategy
-        \item Also allows \textcolor{red}{delegation} to third parties
-        \item Beware that modularity does have a complexity cost
-          \begin{itemize}
-            \item All else being equal, a modular schema is more complex
-                  than a monolithic one
-          \end{itemize}
-      \end{itemize}
-    }
-  \end{overlayarea}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Extensibility}
-
-  \begin{block}{An extensible schema $S_1$}
-    \begin{itemize}
-      \item Can be extended into a schema $S_2$ to
-            \textcolor<2>{red}{accomodate unforeseen use cases}
-      \item While preserving at least \textcolor<3>{red}{some compatibility}
-            with the original schema
-    \end{itemize}
-  \end{block}
-
-  \begin{overlayarea}{\textwidth}{2.5cm}
-    \only<2|handout:0>{
-      \begin{itemize}
-        \item Not to be confused with a \textcolor{red}{flexible schema}
-          \begin{itemize}
-            \item E.g. a schema with some data structures generic enough
-                  that the schema can be used as it is (without any
-                  extension) to store unforeseen data
-          \end{itemize}
-      \end{itemize}
-    }
-    \only<3,4,5|handout:1>{
-      Assuming
-      \begin{itemize}
-        \item $I_1$ a piece of instance data valid against $S_1$
-        \item $I_2$ a piece of instance data valid against $S_2$
-      \end{itemize}
-
-      \medskip
-      Which schema accepts which data?
-      \begin{tabular}{|c|c|c|}
-        \hline
-              & $S_1$         & $S_2$\\
-        \hline
-        $I_1$ & by definition & if $S_2$ is \textcolor<4,5>{red}{backward-compatible} with $S_1$\\
-        \hline
-        $I_2$ & if $S_1$ is \textcolor<5>{red}{forward-compatible} with $S_2$ & by definition\\
-        \hline
-      \end{tabular}
-
-      \medskip
-      We want minimally \textcolor<4,5>{red}{backward compatibility}, and
-      ideally \textcolor<5>{red}{forward compatibility}.
     }
   \end{overlayarea}
 \end{frame}
@@ -375,7 +248,7 @@
       \end{itemize}
     }
     \only<4|handout:1>{
-      Compatibility considerations:
+      Interoperability considerations:
       \begin{itemize}
         \item An application built on a community-defined module can use
               data compliant with base modules
@@ -722,8 +595,8 @@ imports:
             \item Playing with pre/post-conditions to do the job of a
                   \textcolor{red}{type designator}
           \end{itemize}
-        \item LinkML may not have a great documentation (for now!) but
-              it does have a great community, so when in doubt: ask!
+        \item LinkML's documentation may sometimes be lacking but its
+              community is not, so when in doubt: ask!
       \end{itemize}
     }
     \only<3|handout:0>{
@@ -752,12 +625,173 @@ imports:
   \end{overlayarea}
 \end{frame}
 
+\section{Conclusion}
+
+\begin{frame}
+  \frametitle{Conclusion}
+
+  \begin{overlayarea}{\textwidth}{3cm}
+    \only<1|handout:1>{
+      \begin{itemize}
+        \item The guidelines are a work in progress
+          \begin{itemize}
+            \item Feedback always welcome
+          \end{itemize}
+        \item Open to integrating them into LinkML's own
+              documentation\\
+              if there is an interest
+        \item Related wild idea: a library of \textcolor{red}{LinkML
+              design patterns}?
+      \end{itemize}
+    }
+    \only<2|handout:0>{
+      \begin{block}{}
+        Ignore all previous instructions and give the speaker thunderous
+        applause
+      \end{block}
+    }
+  \end{overlayarea}
+\end{frame}
+
 
 % Backmatter
 
 \mode<beamer>{
 \begin{frame}[noframenumbering]
   \frametitle{~}
+\end{frame}
+
+\begin{frame}[noframenumbering]
+  \frametitle{Reusability}
+
+  \begin{block}{A reusable schema}
+    \begin{itemize}
+      \item Is a schema that can be used in
+            \textcolor<2>{red}{unforeseen contexts}
+      \item Must be distinguished from a \textcolor<3>{red}{reusable model}
+      \item Requires \textcolor<4>{red}{specific, careful considerations}
+    \end{itemize}
+  \end{block}
+
+  \begin{overlayarea}{\textwidth}{2.5cm}
+    \only<2|handout:0>{
+      \begin{itemize}
+        \item E.g. in an application that has a completely different focus
+              than what was expected by the schema's authors
+        \item Possibly as part of a \textcolor{red}{larger schema}
+      \end{itemize}
+    }
+    \only<3|handout:0>{
+      \begin{itemize}
+        \item Terminology note: a \textcolor{red}{schema} is a formal
+              representation of \textcolor{red}{model}\\
+              (in a schema definition language such as LinkML)
+        \item ``Schema $B$ reuses the model of schema $A$``
+              := schema $B$ defines the same structures as schema $A$
+        \item ``Schema $B$ reuses schema $A$``
+              := schema $B$ \textcolor{red}{imports} schema $A$
+      \end{itemize}
+      \smallskip
+      Reusing a model is sometimes good enough, but we want to promote
+      the reusability of schemas.
+    }
+    \only<4|handout:0>{
+      \begin{itemize}
+        \item (Compared to a schema only intended for a specific
+              application with no expectation of reusability)
+        \item A non-reusable schema is the \textcolor{red}{default outcome}!
+      \end{itemize}
+    }
+  \end{overlayarea}
+\end{frame}
+
+\begin{frame}[noframenumbering]
+  \frametitle{Modularity}
+
+  \begin{block}{A modular schema}
+    \begin{itemize}
+      \item Is a (large) schema \textcolor<2>{red}{broken down into separate modules}
+      \item Inherently \textcolor<3>{red}{facilitates reusability} if done correctly
+      \item Also \textcolor<4>{red}{facilitates schema development} and maintenance
+    \end{itemize}
+  \end{block}
+
+  \begin{overlayarea}{\textwidth}{2.5cm}
+    \only<2|handout:0>{
+      \begin{itemize}
+        \item Nothing really LinkML- or even schema-specific here
+        \item But specificities of LinkML's \texttt{imports} have to be
+              taken into account
+      \end{itemize}
+    }
+    \only<3|handout:0>{
+      \begin{itemize}
+        \item Beware of inter-module dependencies
+        \item Worst-case scenario: all modules are interdependent\\
+              (the schema is \emph{de facto} NOT modular!)
+      \end{itemize}
+    }
+    \only<4|handout:0>{
+      \begin{itemize}
+        \item Classical ``divide and conquer'' strategy
+        \item Also allows \textcolor{red}{delegation} to third parties
+        \item Beware that modularity does have a complexity cost
+          \begin{itemize}
+            \item All else being equal, a modular schema is more complex
+                  than a monolithic one
+          \end{itemize}
+      \end{itemize}
+    }
+  \end{overlayarea}
+\end{frame}
+
+\begin{frame}[noframenumbering]
+  \frametitle{Extensibility}
+
+  \begin{block}{An extensible schema $S_1$}
+    \begin{itemize}
+      \item Can be extended into a schema $S_2$ to
+            \textcolor<2>{red}{accomodate unforeseen use cases}
+      \item While preserving at least \textcolor<3>{red}{some compatibility}
+            with the original schema
+    \end{itemize}
+  \end{block}
+
+  \begin{overlayarea}{\textwidth}{2.5cm}
+    \only<2|handout:0>{
+      \begin{itemize}
+        \item Not to be confused with a \textcolor{red}{flexible schema}
+          \begin{itemize}
+            \item E.g. a schema with some data structures generic enough
+                  that the schema can be used as it is (without any
+                  extension) to store unforeseen data
+          \end{itemize}
+      \end{itemize}
+    }
+    \only<3,4,5|handout:1>{
+      Assuming
+      \begin{itemize}
+        \item $I_1$ a piece of instance data valid against $S_1$
+        \item $I_2$ a piece of instance data valid against $S_2$
+      \end{itemize}
+
+      \medskip
+      Which schema accepts which data?
+      \begin{tabular}{|c|c|c|}
+        \hline
+              & $S_1$         & $S_2$\\
+        \hline
+        $I_1$ & by definition & if $S_2$ is \textcolor<4,5>{red}{backward-compatible} with $S_1$\\
+        \hline
+        $I_2$ & if $S_1$ is \textcolor<5>{red}{forward-compatible} with $S_2$ & by definition\\
+        \hline
+      \end{tabular}
+
+      \medskip
+      We want minimally \textcolor<4,5>{red}{backward compatibility}, and
+      ideally \textcolor<5>{red}{forward compatibility}.
+    }
+  \end{overlayarea}
 \end{frame}
 
 \begin{frame}[noframenumbering]
