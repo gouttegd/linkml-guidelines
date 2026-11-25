@@ -103,6 +103,28 @@
       \end{itemize}
     }
   \end{overlayarea}
+  \note<1>{What do we want to use LinkML for and what constraints are we
+    facing?
+
+    Back in the early 2000s, the bioimaging community designed the OME
+    model, a XML model which since then has been used as the foundation
+    for a large part of the bioimaging software stack. That model has
+    served us very well over the years, but it does have limitations:
+
+    \begin{itemize}
+      \item It is strictly a XML model, which made sense at the time but
+            nobody wants to use XML anymore;
+      \item It's a large monolithic model that tries to describe
+            everything bioimaging developers need;
+      \item It is starting to show its age, notably in that it does not
+            allow to describe images that have more than 5 dimensions or
+            to fully describe modern microscopy hardware;
+      \item It cannot be easily extended -- any attempt to extend it (as
+            the QUAREP-LiMi community has done to be able to describe
+            modern microscopes) can only results in a \emph{de facto}
+            new schema that is incompatible with OME.
+    \end{itemize}
+  }
 \end{frame}
 
 \begin{frame}
@@ -137,6 +159,41 @@
               \textcolor<6>{red}{metadata in JSON}
       \end{itemize}
     \end{block}
+  }
+  \note<1>{
+    Another problem in the bioimaging community is the issue of imaging
+    file formats. Basically, the problem is that there are simply too
+    many of them. For years, the solution was (and still is to this day)
+    to use the \emph{OME-TIFF} format. This consists of a standard TIFF
+    file containing, in addition to the actual image data, an embedded
+    XML file with the OME metadata.
+
+    This format is used as the common file format into which all images
+    in any other format are converted, so that downstream applications
+    only have to deal with this format.
+
+    Unfortunately, while OME-TIFF has also served us well for those past
+    20 years, it is also showing its age. Notably, the underlying TIFF
+    format is not scalable enough to handle many current imaging
+    datasets, whose sizes can reach several terabytes or even petabytes.
+    Its handling of metadata also inherits the limitations of the OME
+    model that we've just discussed.\par
+  }
+  \note<2>{
+    To address the scalability issue, over the last few years the
+    bioimaging community has been developing the OME Next Generation
+    File Format (OME-Zarr), which is based on the Zarr format for
+    ``cloud-native'' arrays.
+
+    Without going into the details, the Zarr format is designed to
+    natively allow to store arbitrarily large arrays on cloud storage
+    and let applications download only the parts of the arrays they need
+    at any given time, in a way that is not unlike video streaming.
+
+    Basically, an OME-Zarr file stores the image pixels in Zarr arrays,
+    solving the scalability issue, and the image metadata in JSON files
+    -- which gives an opportunity to try to address the problems with
+    the OME model.\par
   }
 \end{frame}
 
@@ -197,6 +254,35 @@
       \end{block}
     }
   \end{overlayarea}
+  \note<1>{
+    To represent bioimaging metadata in OME-Zarr, we need a new form for
+    the OME model, which as a bare minimum must be representable in
+    JSON. And while we are at it, we want to address the aforementioned
+    limitations of the OME model.
+
+    This means that we want to avoid tieing ourselves to JSON the way we
+    previously tied ourselves to XML, so that we have a model that is
+    representable in several formats instead of just JSON.
+
+    We also want to avoid making a new monolithic model, and instead
+    migrate to a model that is more modular and easier to reuse
+    --~including as part of a larger model beyond OME.
+
+    Lastly, we want a model that can be easily extended by anyone, in a
+    way that always preserves interoperability with the base model.\par
+  }
+  \note<6>{
+    Our plan is to use LinkML for all of that.
+
+    For the first two points, LinkML is an obvious choice due to its
+    native support of JSON but also its independance to serialization
+    formats --~which is one of the great selling points of LinkML.
+
+    However, using LinkML, in itself, does \emph{not} automagically make
+    a schema modular, reusable, and extensible. One of our aims is to
+    establish some guidelines that can help designing schemas with those
+    characteristics.\par
+  }
 \end{frame}
 
 \begin{frame}
@@ -259,6 +345,36 @@
       \end{itemize}
     }
   \end{overlayarea}
+  \note<1>{
+    What we envision for the future OME model is a modular and
+    distributed approach divided in three layers.
+
+    The first layer essentially corresponds to the current OME model,
+    except that it is broken down in several independent modules.
+
+    The second layer is made of community-defined modules, by which
+    subsets of the bioimaging community could extend one or several of
+    the base modules to provide richer metadata for specific topics.
+
+    The third layer is made of individual extensions, by which anyone
+    could extend either a base module or a community-defined module
+    --~this would in particular allow the representation of
+    vendor-specific metadata.\par
+  }
+  \note<4>{
+    One of the key desired characteristics is that interoperability must
+    always be preserved.
+
+    An application built against a community-defined module
+    must be able to use data compliant with the base modules. That is, a
+    community-defined module must extend a base module in a way that
+    preserve backwards compatibility with the base layer.
+
+    In the other direction, an application that is only aware of the
+    base modules must be able to use data compliant with an unknown
+    community module or individual extension. That is, the base layer
+    must be forward-compatible with the second and third layer.\par
+  }
 \end{frame}
 
 \section{Guidelines for LinkML schema authors}
@@ -281,6 +397,21 @@
           \url{https://github.com/gouttegd/linkml-guidelines/releases/download/v20261012/linkml-guidelines.pdf}
           (pre-rendered PDF)
   \end{itemize}
+  \note{
+    As I have said before, LinkML schemas are not intrinsically modular,
+    reusable, and extensible (that is not a LinkML limitation; the same
+    can be said with any schema definition language that I know of).
+
+    We believe that we cannot possibly achieve our layered, distributed
+    model without providing strong guidance to schema authors, which is
+    why we started this idea of ``LinkML guidelines'': a document
+    intended to help schema authors create modular, reusable, and
+    extensible schemas.
+
+    The current draft of this document is available here, and in the
+    rest of this presentation I will basically show you an excerpt of
+    those guidelines.\par
+  }
 \end{frame}
 
 \begin{frame}
@@ -321,6 +452,23 @@
       \end{itemize}
     }
   \end{overlayarea}
+  \note<1>{
+    The first guideline is very basic, but nonetheless important. In
+    short, the earlier you decide to use LinkML in your project, the
+    better.
+
+    You can do things in JSON that are not always easy or even possible
+    to accurately model in LinkML, which means that trying to write a
+    LinkML schema \emph{a posteriori} to fit a pre-existing JSON
+    structure may yield poorly designed schemas that don't benefit from
+    LinkML as much as they could.
+
+    Overall, you will get much better schemas if you can use LinkML from
+    the very beginning, and design your schema while focusing mostly on
+    the model without paying too much attention on the serialisation.
+    Design the model and let the LinkML schema dictate the
+    serialisation, rather than the other way around.\par
+  }
 \end{frame}
 
 \begin{lrbox}{\examplea}
@@ -378,6 +526,40 @@ classes:
       most important hurdle to schema reusability!
     }
   \end{overlayarea}
+  \note<1>{
+    Another basic guideline is to define and follow a strict naming
+    convention for all schema elements.
+
+    This is not merely about aesthetics. A naming convention makes a
+    schema much easier to read and maintain, and it also helps catching
+    some basic mistakes.
+
+    For example, if your naming convention allows you to immediately
+    distinguish a mixin class from a non-mixin class, then you can
+    immediately spot when a non-mixin class erroneously inherit from a
+    mixin class.\par
+  }
+  \note<2>{
+    More importantly, a naming convention is critical to avoid name
+    conflicts across schemas.
+
+    For reusability, it is essential to realize that LinkML has no
+    concepts of namespace. Even though schema elements all have their
+    own URIs, what matters is their names. And all element names in
+    LinkML live in a single, flat namespace that encompasses the entire
+    imports closure.
+
+    What this means is that, when two schemas that are parts of the same
+    imports closure each define an element with the same name, you will
+    get either a fatal error or one definition will silently override
+    the other. Either way, reusability takes a hit --~you can only reuse
+    a schema if that schema does not cause any name conflict when you
+    are importing it.
+
+    It is therefore critical to always think very carefully about how
+    you name the elements of your schema, if you want your schema to be
+    reusable.\par
+  }
 \end{frame}
 
 \begin{frame}
@@ -421,6 +603,36 @@ classes:
       \end{itemize}
     }
   \end{overlayarea}
+  \note<1>{
+    This is another guideline essential for reusability: whenever
+    possible, avoid using slots.
+
+    Having slots as first-class entities is nice, but the problem with
+    slots is that they pollute the global namespace, and by doing so
+    they greatly increase the likelihood of a name conflict whenever the
+    schema is reused outside of its original context.
+
+    And you cannot easily rely on a slot naming convention to circumvent
+    the problem --~as you can for class or enum names~--, because
+    contrary to class or enum names, slot names are directly present in
+    the instance data, and it's not necessarily a good idea for your
+    naming convention to leak into instance data.\par
+  }
+  \note<2>{
+    So instead, I strongly recommend to always favour the use of
+    attributes. Attribute names are local to the class in which they are
+    defined, which precludes any possibility of name clashes across
+    schemas.
+
+    If you do need the same attributes across several classes --~the
+    primary reason for using slots in the first place~--, then if the
+    classes are related enough that they can derive from a common
+    ancestor, you can define the attributes in that common ancestor.
+
+    If the classes are not related, then define the common attributes in
+    a mixin class, and reuse that mixin class in all classes in which
+    you need the same attributes.\par
+  }
 \end{frame}
 
 \begin{lrbox}{\examplea}
@@ -510,6 +722,35 @@ classes:
       \end{columns}
     }
   \end{overlayarea}
+  \note<1>{
+    Next is an example of something that is more a \emph{design pattern}
+    than a \emph{guideline}, and is best explained with an example.
+
+    Say you want to model a microscope along with the various components
+    that it is made of. One way to do that is to have your microscope
+    class have one attribute for each component: one attribute for the
+    objective, one attribute for the detector, etc.
+
+    The problem with that approach is that whenever you want to model a
+    new type of component, you must both (1) add the new class
+    representing the new component, \emph{and} (2) modify the microscope
+    class to add a corresponding attribute.\par
+  }
+  \note<2>{
+    I rather recommend a design where a single attribute holds a list of
+    component objects, and where specific components are represented as
+    specific subclasses of a \emph{MicroscopeComponent} class.
+
+    Under that approach, new components can be added at any time without
+    ever having to update the microscope class --~all that is needed is
+    to add a new subclass of \emph{MicroscopeComponent}. This makes the
+    schema easier to maintain and, critically, to extend.
+
+    One drawback of this approach, compared to a series of attributes,
+    is that it does not allow to define component-specific constraints
+    --~at least not within the LinkML schema itself. However in many
+    cases I believe this is a very acceptable tradeoff.\par
+  }
 \end{frame}
 
 \begin{frame}[fragile]
@@ -567,7 +808,31 @@ imports:
     \item Allows to reuse \emph{ome-main} as part of a larger schema
           that provides its own definition of \emph{OMEBase}
   \end{itemize}
+  \note<1>{
+    This is a pattern that can be used to allow to easily customize a
+    schema when it is reused. The idea is fundamentally to isolate
+    customization points in a separate schema, which can be easily
+    replaced by a third-party whenever they do need to customize
+    something.
 
+    In this example, most of the model is defined in the \emph{ome-main}
+    schema, except for the base class \emph{OMEBase} --~that class is
+    the customization point.
+
+    A separate schema \emph{ome-base} does provide an empty definition
+    for the \emph{OMEBase} class --~this is the customization layer. It
+    is there to ensure we have a valid schema (with all classes defined)
+    when no customization is needed.
+
+    Lastly, the \emph{ome} schema simply imports both the main schema
+    and the default customization layer, resulting in an usable, valid
+    schema.
+
+    If you do need to customize \emph{OMEBase} as part of your
+    integration of the OME model in a larger schema, you can then import
+    the main layer, while ensuring that your larger schema does provide
+    its own definition of \emph{OMEBase}.\par
+  }
 \end{frame}
 
 \begin{frame}
@@ -623,6 +888,34 @@ imports:
       \end{itemize}
     }
   \end{overlayarea}
+  \note<1>{
+    I will finish by another fairly basic, but no less important,
+    guideline.
+
+    Do take the time to discover LinkML features. You can obtain some
+    very interesting behaviours with sometimes nothing more to do than
+    just switching a single boolean metaslot.
+
+    Trying to do yourself what can be done natively by a LinkML feature
+    --~typically because you don't know about the LinkML feature~--
+    is what I call an anti-pattern, and I've seen several of those in
+    LinkML schemas in the wild, such as trying to invent your own
+    ``foreign key'' system to reference objects where LinkML already has
+    a built-in referencing mechanism.\par
+  }
+  \note<2>{
+    At the same time, you must also be mindful that several aspects of
+    LinkML are unfortunately underspecified --~and worse, some of them
+    are already handled differently (since they are underspecified) by
+    different implementations.
+
+    For interoperability's sake, you must stay clear of underspecified
+    features, at least until they are properly specified. Part of the
+    work of writing the LinkML guidelines is precisely to identify the
+    underspecified features, so that we can (1) recommend against their
+    usage and (2) in parallel, work with the LinkML developers to
+    improve the specification.\par
+  }
 \end{frame}
 
 \section{Conclusion}
@@ -651,6 +944,21 @@ imports:
       \end{block}
     }
   \end{overlayarea}
+  \note<1>{
+    The ``LinkML guidelines'' document is very much a work in progress
+    and very much incomplete.
+
+    While it is being drafted for the benefit of the bioimaging
+    community, I do believe most of those guidelines are generic enough
+    to be of interest for the broader LinkML community, and I am open to
+    contributing them to LinkML's native documentation.
+
+    I would also like to suggest that LinkML could benefit from some
+    kind of ``library of design patterns'', providing carefully designed
+    solutions to some of the most common problems schema designers can
+    face --~akin to what the Gang of Fours did decades ago for object
+    oriented programming.\par
+  }
 \end{frame}
 
 
